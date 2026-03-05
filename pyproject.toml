@@ -1,0 +1,23 @@
+[project]
+name = "analogue-museum"
+version = "0.1.0"
+description = "Data collection pipeline for the World Analogue Photography Museum"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.27",
+    "pydantic>=2.0",
+    "beautifulsoup4>=4.12",
+    "lxml>=5.0",
+    "thefuzz[speedup]>=0.22",
+    "scrapling>=0.2",
+]
+
+[project.scripts]
+collect-wikidata = "src.collectors.wikidata:main"
+collect-flickr = "src.collectors.flickr:main"
+collect-wikipedia = "src.collectors.wikipedia:main"
+collect-camerawiki = "src.collectors.camerawiki:main"
+collect-collectiblend = "src.collectors.collectiblend:main"
+normalize = "src.normalization.merge:main"
+download-images = "src.images.download:main"
