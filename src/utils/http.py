@@ -16,7 +16,7 @@ DEFAULT_HEADERS = {
 class RateLimitedClient:
     """HTTP client that enforces a minimum delay between requests."""
 
-    def __init__(self, min_delay: float = 1.0, max_retries: int = 3):
+    def __init__(self, min_delay: float = 1.0, max_retries: int = 3, verify_ssl: bool = True):
         self.min_delay = min_delay
         self.max_retries = max_retries
         self._last_request_time = 0.0
@@ -24,6 +24,7 @@ class RateLimitedClient:
             headers=DEFAULT_HEADERS,
             timeout=30.0,
             follow_redirects=True,
+            verify=verify_ssl,
         )
 
     async def get(self, url: str, **kwargs) -> httpx.Response:
@@ -40,6 +41,8 @@ class RateLimitedClient:
                     wait = int(resp.headers.get("Retry-After", 30 * (attempt + 1)))
                     print(f"  Rate limited ({resp.status_code}), waiting {wait}s...")
                     await asyncio.sleep(wait)
+                    # Increase min_delay after rate limiting to avoid repeated hits
+                    self.min_delay = min(self.min_delay * 1.5, 10.0)
                     continue
                 resp.raise_for_status()
                 return resp

@@ -2,6 +2,7 @@ data/raw/
 data/processed/
 data/merged/
 data/images/
+data/reports/
 .env
 __pycache__/
 *.pyc
@@ -10,3 +11,4 @@ __pycache__/
 dist/
 build/
 .DS_Store
+.claude/

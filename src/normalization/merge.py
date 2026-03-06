@@ -22,6 +22,74 @@ from src.utils.data_io import MERGED_DIR, load_records, save_merged
 SOURCES_PRIORITY = ["wikidata", "wikipedia", "camerawiki", "chinesecamera", "collectiblend", "flickr"]
 
 # ---------------------------------------------------------------------------
+# Chinese manufacturer name mapping (Chinese characters -> English brand name)
+# Used to prepend English name to Chinese-only camera names
+# ---------------------------------------------------------------------------
+CHINESE_BRAND_NAMES: dict[str, str] = {
+    "海鸥": "Seagull",
+    "凤凰": "Phenix",
+    "珠江": "Pearl River",
+    "长城": "Great Wall",
+    "华夏": "Huaxia",
+    "东方": "Dongfang",
+    "红旗": "Red Flag",
+    "红梅": "Hongmei",
+    "牡丹": "Mudan",
+    "孔雀": "Kongque",
+    "华山": "Huashan",
+    "上海": "Shanghai",
+    "天津": "Tianjin",
+    "太湖": "Taihu",
+    "西湖": "Xihu",
+    "虎丘": "Huqiu",
+    "友谊": "Youyi",
+    "华中": "Hua Zhong",
+    "青岛": "Qingdao",
+    "万灵": "Wanling",
+    "三友": "Sanyou",
+    "七一": "Qiyi July1st",
+    "万能达": "Wannengda",
+    "春雷": "Chunlei",
+    "晨光": "Chenguang",
+    "百花": "Baihua",
+    "甘光": "Gangguang",
+    "燕京": "Yanjing",
+    "紫金山": "Zijinshan",
+    "劳动": "Laodong",
+    "幸福": "Xingfu",
+    "环球": "Huanqiu",
+    "神龙": "Shenlong",
+    "华蓥": "Huaying",
+    "明佳": "Mingjia",
+    "雄鹰": "Xiongying",
+    "泰": "Tai",
+}
+
+
+def _add_english_name(record: dict) -> None:
+    """If camera name is Chinese-only, prepend English manufacturer/brand name."""
+    name = record.get("name", "")
+    # Check if name contains Chinese characters but no Latin letters
+    if not re.search(r"[\u4e00-\u9fff]", name):
+        return
+    if re.search(r"[a-zA-Z]", name):
+        return  # Already has English text
+
+    # Try to map the Chinese brand prefix to English
+    for cn, en in CHINESE_BRAND_NAMES.items():
+        if name.startswith(cn):
+            # Replace Chinese brand with English, keep the rest
+            suffix = name[len(cn):].strip()
+            record["name"] = f"{en} {suffix}" if suffix else en
+            return
+
+    # Fallback: prepend manufacturer_normalized
+    mfr = record.get("manufacturer_normalized", "")
+    if mfr:
+        record["name"] = f"{mfr} {name}"
+
+
+# ---------------------------------------------------------------------------
 # Film format normalization
 # ---------------------------------------------------------------------------
 # Map messy free-text film_format values to canonical format names.
@@ -181,6 +249,23 @@ _NON_RETAIL_KEYWORDS = [
 ]
 _NON_RETAIL_PATTERNS = [re.compile(r'\b' + re.escape(kw) + r'\b', re.I) for kw in _NON_RETAIL_KEYWORDS]
 
+# Novelty/branded toy cameras (not serious photography tools)
+_NOVELTY_PATTERNS = [
+    re.compile(r"\bbugs\s+bunny\b", re.I),
+    re.compile(r"\bcrayola\b", re.I),
+    re.compile(r"\bbarbie\b", re.I),
+    re.compile(r"\bsnoopy\b", re.I),
+    re.compile(r"\bpokemon\b|\bpokémon\b", re.I),
+    re.compile(r"\bsesame\s+street\b", re.I),
+    re.compile(r"\bspider-?man\b", re.I),
+    re.compile(r"\bstar\s+wars\b", re.I),
+    re.compile(r"\bdisney\b", re.I),
+    re.compile(r"\bnickelodeon\b", re.I),
+    re.compile(r"\btoy\s+story\b", re.I),
+    re.compile(r"\bhello\s+kitty\b", re.I),
+    re.compile(r"\bmickey\s+mouse\b", re.I),
+]
+
 # Manufacturers that are not consumer camera companies
 _NON_RETAIL_MANUFACTURERS = {
     "ball aerospace & technologies", "dornier", "smithsonian astrophysical observatory",
@@ -217,6 +302,7 @@ _DIGITAL_PATTERNS = [
     re.compile(r"\bEOS\s*\d+D\b", re.I),
     re.compile(r"\bEOS\s*R\d", re.I),
     re.compile(r"\bEOS\s*M\d", re.I),
+    re.compile(r"\bEOS\s*C\d", re.I),  # Canon Cinema EOS
     re.compile(r"\bD-SLR\b", re.I),
     re.compile(r"\bPowerShot\b", re.I),
     re.compile(r"\bCoolPix\b", re.I),
@@ -238,6 +324,82 @@ _DIGITAL_PATTERNS = [
     re.compile(r"\bExilim\b", re.I),
     re.compile(r"\bOptio\b", re.I),
     re.compile(r"\bPixii\b", re.I),
+    # Olympus digital compacts
+    re.compile(r"\bOlympus\s+C-\d{3,4}\b", re.I),
+    re.compile(r"\bCamedia\b", re.I),
+    # Leica digital series (but NOT the 1973 film Leica CL)
+    re.compile(r"\bLeica\s+X[\s-]", re.I),
+    re.compile(r"\bLeica\s+X$", re.I),
+    re.compile(r"\bLeica\s+Q\d*\b", re.I),
+    re.compile(r"\bLeica\s+SL\d*\b", re.I),
+    re.compile(r"\bLeica\s+TL\d*\b", re.I),
+    # Nikon digital
+    re.compile(r"\bNikon\s+1\s+", re.I),
+    re.compile(r"\bNikon\s+Z\d", re.I),
+    re.compile(r"\bNikon\s+Zf\b", re.I),
+    re.compile(r"\bNikon\s+ZR\b", re.I),
+    # Other digital compacts/series
+    re.compile(r"\bFinePix\s+[FZJ]\d", re.I),
+    re.compile(r"\bPentax\s+Q\b", re.I),
+    re.compile(r"\bSamsung\s+NX", re.I),
+    re.compile(r"\bSony\s+[αa]\d{4}\b", re.I),
+    re.compile(r"\bPanasonic\s+AG-", re.I),
+    # Fujifilm digital
+    re.compile(r"\bFinePix\b", re.I),
+    re.compile(r"\bFujifilm\s+X-[A-Z]\d", re.I),  # X-S1, X-T1, X-E1, etc.
+    re.compile(r"\bFujifilm\s+X\d{2,}", re.I),  # X20, X100, etc.
+    re.compile(r"\bFujifilm\s+DX-", re.I),
+    re.compile(r"\bFujifilm\s+XF\d", re.I),
+    # Leica digital
+    re.compile(r"\bDigilux\b", re.I),
+    re.compile(r"\bD-Lux\b", re.I),
+    re.compile(r"\bV-Lux\b", re.I),
+    # Olympus digital
+    re.compile(r"\bOlympus\s+FE-", re.I),
+    re.compile(r"\bOlympus\s+VR-", re.I),
+    re.compile(r"\bOlympus\s+VH-", re.I),
+    re.compile(r"\bOlympus\s+SZ-", re.I),
+    re.compile(r"\bOlympus\s+SP-", re.I),
+    re.compile(r"\bOlympus\s+SH-", re.I),
+    re.compile(r"\bOlympus\s+TG-", re.I),
+    re.compile(r"\bOlympus\s+E-\d{3,}", re.I),  # E-300, E-500, etc.
+    re.compile(r"\bOlympus\s+PEN\s+E-", re.I),  # PEN E-PL series
+    re.compile(r"\bTough\s+TG-", re.I),
+    re.compile(r"\bOM\s+System\b", re.I),
+    # HP/other digital compacts
+    re.compile(r"\bPhotosmart\b", re.I),
+    re.compile(r"\bPhotoSmart\b", re.I),
+    re.compile(r"\bEasyShare\b", re.I),
+    # Sony digital
+    re.compile(r"\bSony\s+RX\d", re.I),
+    re.compile(r"\bSony\s+ZV-", re.I),
+    # Ricoh digital
+    re.compile(r"\bRicoh\s+GR\b", re.I),  # GR digital
+    re.compile(r"\bRicoh\s+GXR\b", re.I),
+    re.compile(r"\bRicoh\s+WG-", re.I),
+    re.compile(r"\bRicoh\s+G\d{3}", re.I),  # G700, G900
+    re.compile(r"\bRicoh\s+Caplio\b", re.I),
+    re.compile(r"\bPentax\s+\*?ist\b", re.I),  # Pentax *ist series (DSLR)
+    re.compile(r"\bPentax\s+K-[1-9]\d?\b", re.I),  # Pentax K-1, K-3, K-5, K-7 (DSLR, not K1000)
+    re.compile(r"\bK\d{2,3}D\b", re.I),  # K10D, K20D, K100D, K200D
+    re.compile(r"\bPentax\s+KP\b", re.I),
+    re.compile(r"\bPentax\s+KF\b", re.I),
+    re.compile(r"\bPentax\s+K-S\d", re.I),  # K-S1, K-S2
+    re.compile(r"\bPentax\s+K-r\b", re.I),
+    # Samsung digital
+    re.compile(r"\bDigimax\b", re.I),
+    # Olympus digital compacts
+    re.compile(r"\bStylus\s+SH\b", re.I),
+    re.compile(r"\bOlympus\s+Stylus\s+1\b", re.I),  # Stylus 1 (digital compact)
+    re.compile(r"\bOlympus\s+Stylus\s+Tough\b", re.I),
+    # Camcorders
+    re.compile(r"\bHandycam\b", re.I),
+    re.compile(r"\bHF\s+[SRM]\d", re.I),  # Canon HF series
+    re.compile(r"\bcamcorder\b", re.I),
+    # Pentax digital
+    re.compile(r"\bPentax\s+MX-1\b", re.I),
+    # camera_type indicators
+    re.compile(r"Still image camera with motion capability", re.I),
 ]
 
 # Specific camera names/models that are digital (not caught by patterns)
@@ -250,6 +412,10 @@ _DIGITAL_NAMES = {
     "pentax x-5", "pentax x90", "pentax xg-1",
     "rollei qz cameras", "samsung galaxy camera", "samsung galaxy camera 2",
     "hello kitty pocket camera",
+    # Leica CL digital (2017+) — NOT the 1973 film Leica CL
+    "leica cl 'betriebskamera'",
+    # Olympus digital compacts with alphanumeric suffixes not caught by C-\d{3,4}
+    "olympus c-730uz",
 }
 
 
@@ -259,6 +425,9 @@ def _is_non_retail(record: dict) -> bool:
     desc = record.get("description", "") or ""
     text = f"{name} {desc}"
     for pat in _NON_RETAIL_PATTERNS:
+        if pat.search(text):
+            return True
+    for pat in _NOVELTY_PATTERNS:
         if pat.search(text):
             return True
     mfr = (record.get("manufacturer_normalized") or record.get("manufacturer", "")).lower()
@@ -271,13 +440,26 @@ def _is_non_retail(record: dict) -> bool:
     return False
 
 
+# Manufacturers that only made digital cameras (never analogue)
+_DIGITAL_ONLY_MANUFACTURERS = {
+    "hewlett packard", "hp",
+    "benq", "acer", "dell", "gateway", "mustek",
+    "om system",
+}
+
+
 def _is_digital(record: dict) -> bool:
     """Check if a camera is digital (not analogue)."""
     name = record.get("name", "")
     if name.lower() in _DIGITAL_NAMES:
         return True
+    mfr = (record.get("manufacturer_normalized") or record.get("manufacturer", "")).lower()
+    if mfr in _DIGITAL_ONLY_MANUFACTURERS:
+        return True
+    cam_type = record.get("camera_type", "") or ""
+    text = f"{name} {cam_type}"
     for pat in _DIGITAL_PATTERNS:
-        if pat.search(name):
+        if pat.search(text):
             return True
     return False
 
@@ -418,10 +600,11 @@ def _merge_entities(all_records: list[dict], merge_fields: list[str]) -> tuple[l
                         "similarity": ratio,
                     })
 
-    # Assign UUIDs and populate launch_date from year_introduced
+    # Assign UUIDs, add English names for Chinese cameras, populate launch_date
     results = []
     for record in by_key.values():
         record["id"] = str(uuid.uuid4())
+        _add_english_name(record)
         if not record.get("launch_date") and record.get("year_introduced"):
             record["launch_date"] = str(record["year_introduced"])
         if not record.get("manufacturer_country"):

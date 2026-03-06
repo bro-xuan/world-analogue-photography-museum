@@ -7,20 +7,20 @@ from __future__ import annotations
 
 # Canonical name -> known aliases (all lowercase for matching)
 MANUFACTURER_ALIASES: dict[str, list[str]] = {
-    "Nikon": ["nippon kogaku", "nippon kogaku k.k.", "nikon corporation"],
+    "Nikon": ["nippon kogaku", "nippon kogaku k.k.", "nippon kogaku k. k.", "nikon corporation", "nikon (nippon kogaku k. k.)"],
     "Canon": ["canon camera co.", "canon camera company", "canon inc.", "canon inc"],
     "Minolta": ["chiyoda kogaku", "chiyoda optics", "minolta camera co."],
     "Konica Minolta": ["konica minolta holdings"],
     "Konica": ["konishiroku", "konica corporation"],
-    "Olympus": ["olympus optical co.", "olympus corporation", "olympus optical", "om digital solutions"],
+    "Olympus": ["olympus optical co.", "olympus corporation", "olympus optical", "om digital solutions", "olympus optical co.,", "olympus optical co., ltd."],
     "Pentax": ["asahi optical", "asahi pentax", "asahi optical co.", "asahi"],
     "Fujifilm": ["fuji photo film", "fuji film", "fuji", "fujifilm holdings"],
-    "Kodak": ["eastman kodak", "eastman kodak company", "kodak", "kodak eastman"],
+    "Kodak": ["eastman kodak", "eastman kodak company", "kodak", "kodak eastman", "kodak's"],
     "Leica": ["ernst leitz", "leitz", "leica camera", "leica camera ag", "leitz (leica)"],
     "Contax": ["contax"],  # Brand by Kyocera/Zeiss Ikon
     "Yashica": ["yashica", "yashica (contax)"],
     "Mamiya": ["mamiya camera", "mamiya digital imaging"],
-    "Rollei": ["rollei", "franke & heidecke", "rollei-werke", "rolleiflex"],
+    "Rollei": ["rollei", "franke & heidecke", "rollei-werke", "rolleiflex", "rollei (franke & heidecke)"],
     "Hasselblad": ["victor hasselblad", "hasselblad"],
     "Polaroid": ["polaroid corporation"],
     "Voigtlander": ["voigtländer", "voigtlaender", "voigtlander"],
@@ -32,7 +32,8 @@ MANUFACTURER_ALIASES: dict[str, list[str]] = {
     "Linhof": ["linhof"],
     "Toyo": ["toyo-view", "toyo field"],
     "Horseman": ["horseman", "komamura"],
-    "Ricoh": ["ricoh company", "ricoh imaging"],
+    "Ricoh": ["ricoh company", "ricoh imaging", "ricoh co."],
+    "Adox": ["adox", "fotowerke dr. c. schleussner"],
     "Sigma": ["sigma corporation"],
     "Tamron": ["tamron co."],
     "Cosina": ["cosina co."],
@@ -128,7 +129,7 @@ MANUFACTURER_ALIASES: dict[str, list[str]] = {
     "Chunlei": ["春雷"],
     "Chenguang": ["晨光", "morning light"],
     # Soviet/Russian brands
-    "Zenit": ["zenit", "kmz", "krasnogorsky zavod", "krasnogorsk mechanical works", "kmz (zenit)"],
+    "Zenit": ["zenit", "kmz", "krasnogorsky zavod", "krasnogorsk mechanical works", "kmz (zenit)", "mechanical factory of krasnogorsk (kmz)", "mechanical factory of krasnogorsk"],
     "FED": ["fed", "fed factory", "kharkov fed factory"],
     "Kiev": ["kiev", "arsenal", "arsenal factory", "zavod arsenal"],
     "Zorki": ["zorki", "kmz zorki"],
@@ -340,6 +341,9 @@ def normalize_manufacturer(name: str) -> str:
     if not name:
         return name
     cleaned = name.strip()
+    # Handle camerawiki parsing bug: infobox text dumped as manufacturer (contains |)
+    if "|" in cleaned:
+        cleaned = cleaned.split("|")[0].strip()
     result = _ALIAS_LOOKUP.get(cleaned.lower())
     if result:
         return result

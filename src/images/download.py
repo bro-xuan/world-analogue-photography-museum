@@ -1,6 +1,10 @@
 """Download images for cameras and films from all sources.
 
-For cameras without images, searches Wikimedia Commons by camera name.
+For cameras without images, searches multiple sources in waterfall order:
+1. Wikidata P18 property
+2. Wikimedia Commons search
+3. Flickr CC-licensed images (requires FLICKR_API_KEY)
+4. Museum APIs (Smithsonian, Science Museum Group)
 """
 
 import asyncio
@@ -9,6 +13,8 @@ import re
 from pathlib import Path
 from urllib.parse import unquote
 
+from src.images.flickr_search import search_flickr_images
+from src.images.museum_search import search_museum_images
 from src.utils.data_io import IMAGES_DIR, MERGED_DIR
 from src.utils.http import RateLimitedClient
 
@@ -64,69 +70,189 @@ def _extract_commons_filename(url: str) -> str | None:
     return None
 
 
-async def _search_commons_image(client: RateLimitedClient, query: str) -> str | None:
-    """Search Wikimedia Commons for an image matching the query.
-
-    Returns a direct image URL or None.
-    """
-    params = {
-        "action": "query",
-        "generator": "search",
-        "gsrsearch": f"filetype:bitmap {query} camera",
-        "gsrnamespace": "6",  # File namespace
-        "gsrlimit": "3",
-        "prop": "imageinfo",
-        "iiprop": "url|size|mime",
-        "format": "json",
-    }
+async def _fetch_p18_image(client: RateLimitedClient, qid: str) -> str | None:
+    """Fetch image URL from Wikidata P18 (image) property for a QID."""
     try:
-        resp = await client.get(COMMONS_API, params=params)
+        resp = await client.get(
+            "https://www.wikidata.org/w/api.php",
+            params={
+                "action": "wbgetentities",
+                "ids": qid,
+                "props": "claims",
+                "format": "json",
+            },
+        )
         data = resp.json()
-        pages = data.get("query", {}).get("pages", {})
-        if not pages:
+        entity = data.get("entities", {}).get(qid, {})
+        claims = entity.get("claims", {})
+        p18 = claims.get("P18", [])
+        if not p18:
             return None
-
-        # Pick the best image: prefer JPEG, reasonable size, skip icons/logos
-        best_url = None
-        best_score = -1
-        for page in pages.values():
-            title = page.get("title", "").lower()
-            # Skip logos, icons, diagrams
-            if any(kw in title for kw in ["logo", "icon", "diagram", "map", "flag", "coat"]):
-                continue
-            imageinfo = page.get("imageinfo", [])
-            if not imageinfo:
-                continue
-            info = imageinfo[0]
-            mime = info.get("mime", "")
-            width = info.get("width", 0)
-            height = info.get("height", 0)
-            url = info.get("url", "")
-
-            if not url or width < 100 or height < 100:
-                continue
-
-            # Score: prefer JPEG, moderate size
-            score = 0
-            if "jpeg" in mime:
-                score += 10
-            if 300 < width < 4000:
-                score += 5
-            if best_url is None or score > best_score:
-                best_url = url
-                best_score = score
-
-        return best_url
+        filename = p18[0].get("mainsnak", {}).get("datavalue", {}).get("value")
+        if not filename:
+            return None
+        # Resolve the Commons filename to a direct URL
+        return await _resolve_commons_url(client, filename)
     except Exception:
         return None
 
 
-async def download_camera_images(max_per_camera: int = 10) -> dict:
+def _pick_best_image(pages: dict, camera_name: str = "") -> str | None:
+    """Pick the best image from a Commons API response, preferring JPEG and moderate size."""
+    best_url = None
+    best_score = -1
+    name_lower = camera_name.lower()
+
+    for page in pages.values():
+        title = page.get("title", "").lower()
+        if any(kw in title for kw in ["logo", "icon", "diagram", "map", "flag", "coat"]):
+            continue
+        imageinfo = page.get("imageinfo", [])
+        if not imageinfo:
+            continue
+        info = imageinfo[0]
+        mime = info.get("mime", "")
+        width = info.get("width", 0)
+        height = info.get("height", 0)
+        url = info.get("url", "")
+
+        if not url or width < 100 or height < 100:
+            continue
+
+        score = 0
+        if "jpeg" in mime:
+            score += 10
+        if 300 < width < 4000:
+            score += 5
+        # Boost if filename contains the camera name
+        if name_lower and name_lower.replace(" ", "_") in title:
+            score += 20
+        if best_url is None or score > best_score:
+            best_url = url
+            best_score = score
+
+    return best_url
+
+
+async def _fetch_wikipedia_image(client: RateLimitedClient, wiki_url: str) -> str | None:
+    """Fetch the main image from a Wikipedia article via the API."""
+    match = re.search(r"wikipedia\.org/wiki/(.+?)(?:#.*)?$", wiki_url)
+    if not match:
+        return None
+    title = unquote(match.group(1))
+    try:
+        resp = await client.get(
+            "https://en.wikipedia.org/w/api.php",
+            params={
+                "action": "query",
+                "titles": title,
+                "prop": "pageimages",
+                "piprop": "original",
+                "format": "json",
+            },
+        )
+        data = resp.json()
+        pages = data.get("query", {}).get("pages", {})
+        for page in pages.values():
+            original = page.get("original", {})
+            url = original.get("source")
+            if url:
+                return url
+    except Exception:
+        pass
+    return None
+
+
+async def _search_commons_image(client: RateLimitedClient, query: str, camera_name: str = "") -> str | None:
+    """Search Wikimedia Commons for an image matching the query.
+
+    Tries exact phrase first, then falls back to keyword search.
+    Returns a direct image URL or None.
+    """
+    # Try exact phrase match only (keyword fallback removed to reduce API calls)
+    for search_query in [f'filetype:bitmap "{query}"']:
+        params = {
+            "action": "query",
+            "generator": "search",
+            "gsrsearch": search_query,
+            "gsrnamespace": "6",  # File namespace
+            "gsrlimit": "5",
+            "prop": "imageinfo",
+            "iiprop": "url|size|mime",
+            "format": "json",
+        }
+        try:
+            resp = await client.get(COMMONS_API, params=params)
+            data = resp.json()
+            pages = data.get("query", {}).get("pages", {})
+            if pages:
+                result = _pick_best_image(pages, camera_name)
+                if result:
+                    return result
+        except Exception:
+            continue
+    return None
+
+
+async def validate_image_urls(cameras: list[dict], client: RateLimitedClient) -> int:
+    """HEAD-request existing image URLs, remove broken ones. Returns count removed."""
+    removed = 0
+    for i, camera in enumerate(cameras):
+        images = camera.get("images", [])
+        if not images:
+            continue
+        valid = []
+        for img in images:
+            url = img.get("url", "")
+            if not url:
+                continue
+            # Skip Commons URLs (they're reliable) and local paths
+            if "wikimedia.org" in url or "wikipedia.org" in url:
+                valid.append(img)
+                continue
+            try:
+                resp = await client.get(url)
+                if resp.status_code < 400:
+                    valid.append(img)
+                else:
+                    removed += 1
+            except Exception:
+                removed += 1
+        camera["images"] = valid
+        if (i + 1) % 1000 == 0:
+            print(f"    Validated {i+1}/{len(cameras)} cameras ({removed} broken URLs removed)")
+    return removed
+
+
+def _strip_undownloaded_urls(cameras: list[dict]) -> int:
+    """Remove image entries that have URLs but no local_path (i.e. download failed).
+
+    This ensures Phase 2 search triggers for cameras whose URLs were broken.
+    Preserves entries with local_path or commons/wikimedia URLs (reliable).
+    """
+    stripped = 0
+    for camera in cameras:
+        images = camera.get("images", [])
+        if not images:
+            continue
+        kept = []
+        for img in images:
+            if img.get("local_path"):
+                kept.append(img)
+            elif img.get("url") and ("wikimedia.org" in img["url"] or "wikipedia.org" in img["url"]):
+                kept.append(img)
+            elif img.get("url"):
+                stripped += 1
+            # Drop entries with no url and no local_path
+        camera["images"] = kept
+    return stripped
+
+
+async def download_camera_images(max_per_camera: int = 1, search_missing: bool = True) -> dict:
     """Download images for all merged cameras.
 
-    1. For cameras with Commons URLs: resolve and download
-    2. For cameras without images: search Commons
-    3. Skip placeholder/icon images
+    Phase 1: Download from existing URLs (fast, collectiblend/chinesecamera/etc.)
+    Phase 2: Search for missing images (slower, Commons/Flickr/Museum APIs)
     """
     cameras_path = MERGED_DIR / "cameras.json"
     if not cameras_path.exists():
@@ -134,11 +260,44 @@ async def download_camera_images(max_per_camera: int = 10) -> dict:
         return {"total": 0, "downloaded": 0, "skipped": 0, "failed": 0, "searched": 0}
 
     cameras = json.loads(cameras_path.read_text())
-    stats = {"total": len(cameras), "downloaded": 0, "skipped": 0, "failed": 0, "searched": 0}
+    stats = {"total": len(cameras), "downloaded": 0, "skipped": 0, "failed": 0, "searched": 0,
+             "already_local": 0}
 
     CAMERAS_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
-    async with RateLimitedClient(min_delay=1.0) as client:
+    # Pre-pass: match existing downloaded files back to cameras by expected filename
+    existing_files = {f.name for f in CAMERAS_IMAGES_DIR.iterdir() if f.is_file()}
+    if existing_files:
+        matched = 0
+        project_root = Path(__file__).resolve().parent.parent.parent
+        for camera in cameras:
+            mfr = camera.get("manufacturer_normalized", "")
+            name = camera.get("name", "unknown")
+            safe_name = _sanitize_filename(f"{mfr}_{name}")
+            # Check if any file on disk matches this camera's expected name
+            local_file = None
+            for ext in ("jpg", "jpeg", "png"):
+                candidate = f"{safe_name}.{ext}"
+                if candidate in existing_files:
+                    local_file = candidate
+                    break
+            if not local_file:
+                continue
+            # Set local_path on the first image record (or add a synthetic one)
+            rel_path = str((CAMERAS_IMAGES_DIR / local_file).relative_to(project_root))
+            images = camera.get("images", [])
+            if images:
+                if not images[0].get("local_path"):
+                    images[0]["local_path"] = rel_path
+                    matched += 1
+            else:
+                camera["images"] = [{"url": "", "source": "local", "local_path": rel_path}]
+                matched += 1
+        if matched:
+            print(f"  Matched {matched} existing local files to camera records", flush=True)
+            stats["already_local"] = matched
+
+    async with RateLimitedClient(min_delay=3.0, verify_ssl=False) as client:
         for i, camera in enumerate(cameras):
             camera_id = camera.get("id")
             name = camera.get("name", "unknown")
@@ -155,24 +314,81 @@ async def download_camera_images(max_per_camera: int = 10) -> dict:
                 if img.get("url") and "/icons/" not in img["url"]
             ]
 
-            # If no real images, search Commons
-            if not real_images:
-                search_query = f"{mfr} {name}" if mfr else name
-                commons_url = await _search_commons_image(client, search_query)
+            # Skip cameras that already have a local image
+            has_local = any(img.get("local_path") for img in images)
+            if has_local:
+                continue
+
+            # If no real images, try multiple search strategies (Phase 2)
+            if not real_images and search_missing:
+                commons_url = None
+                # Try Wikidata P18 first (most reliable)
+                qid = camera.get("wikidata_qid")
+                if qid:
+                    commons_url = await _fetch_p18_image(client, qid)
+
+                # Try Wikipedia article image (for cameras with wikipedia source)
+                if not commons_url:
+                    for src in camera.get("sources", []):
+                        if src.get("source") == "wikipedia" and src.get("source_url"):
+                            wp_img = await _fetch_wikipedia_image(client, src["source_url"])
+                            if wp_img:
+                                commons_url = wp_img
+                            break
+
+                # Commons search with multiple query variants
+                if not commons_url:
+                    search_queries = [f"{mfr} {name}" if mfr else name]
+                    # Try just the camera name without manufacturer prefix
+                    if mfr and name.startswith(mfr):
+                        bare_name = name[len(mfr):].strip()
+                        if bare_name:
+                            search_queries.append(f"{mfr} {bare_name}")
+                    # For Chinese cameras, try Chinese characters from sources
+                    country = camera.get("manufacturer_country", "")
+                    if country == "China":
+                        for src in camera.get("sources", []):
+                            if src.get("source") == "chinesecamera" and src.get("source_id"):
+                                search_queries.append(src["source_id"])
+                                break
+
+                    for sq in search_queries:
+                        commons_url = await _search_commons_image(client, sq, camera_name=name)
+                        if commons_url:
+                            break
                 stats["searched"] += 1
-                if commons_url:
+
+                # Try Flickr CC search
+                if not commons_url:
+                    flickr_results = await search_flickr_images(name, mfr, client)
+                    if flickr_results:
+                        commons_url = flickr_results[0]["url"]
+                        camera.setdefault("images", []).extend(flickr_results)
+                        real_images = flickr_results
+
+                # Try Museum APIs
+                if not commons_url:
+                    museum_results = await search_museum_images(name, mfr, client)
+                    if museum_results:
+                        commons_url = museum_results[0]["url"]
+                        camera.setdefault("images", []).extend(museum_results)
+                        real_images = museum_results
+
+                if commons_url and not real_images:
+                    print(f"  Found image for {mfr} {name}", flush=True)
                     real_images = [{"url": commons_url, "source": "commons_search"}]
-                    # Add to camera's images list
                     camera.setdefault("images", []).append({
                         "url": commons_url,
                         "source": "commons_search",
                         "license": "CC",
                     })
-                else:
+
+                if not real_images:
                     stats["skipped"] += 1
-                    if (i + 1) % 500 == 0:
-                        print(f"  [{i+1}/{len(cameras)}] Progress: {stats['downloaded']} downloaded, "
-                              f"{stats['searched']} searched, {stats['skipped']} skipped")
+                    total_searched = stats["searched"] + stats["skipped"]
+                    if total_searched % 10 == 0:
+                        print(f"  Searched {total_searched}: "
+                              f"found={stats['downloaded']}, not_found={stats['skipped']}", flush=True)
                     continue
 
             # Download the first real image
@@ -203,7 +419,16 @@ async def download_camera_images(max_per_camera: int = 10) -> dict:
                 ext = _ext_from_url(download_url)
                 safe_name = _sanitize_filename(f"{mfr}_{name}")
                 dest = CAMERAS_IMAGES_DIR / f"{safe_name}.{ext}"
-                if dest.exists() and img.get("local_path") != str(dest):
+
+                # If file exists, just link it (don't re-download)
+                if dest.exists():
+                    img["local_path"] = str(dest.relative_to(Path(__file__).resolve().parent.parent.parent))
+                    downloaded_count += 1
+                    stats["already_local"] += 1
+                    continue
+
+                # Find unique filename for new download
+                if dest.exists():
                     suffix = 2
                     while (CAMERAS_IMAGES_DIR / f"{safe_name}_{suffix}.{ext}").exists():
                         suffix += 1
@@ -218,17 +443,38 @@ async def download_camera_images(max_per_camera: int = 10) -> dict:
                 else:
                     stats["failed"] += 1
 
-            if (i + 1) % 200 == 0:
+            if (i + 1) % 100 == 0:
                 print(f"  [{i+1}/{len(cameras)}] Progress: {stats['downloaded']} downloaded, "
-                      f"{stats['searched']} searched, {stats['failed']} failed")
+                      f"{stats['searched']} searched, {stats['failed']} failed, "
+                      f"{stats['already_local']} already local", flush=True)
+                # Periodic save to avoid losing progress
+                cameras_path.write_text(json.dumps(cameras, indent=2, ensure_ascii=False))
 
-    # Save updated cameras with local_path references
+    # Final save
     cameras_path.write_text(json.dumps(cameras, indent=2, ensure_ascii=False))
     print(f"\nDone. Downloaded: {stats['downloaded']}, Searched: {stats['searched']}, "
-          f"Skipped: {stats['skipped']}, Failed: {stats['failed']}")
+          f"Skipped: {stats['skipped']}, Failed: {stats['failed']}, "
+          f"Already local: {stats['already_local']}", flush=True)
     return stats
 
 
 def main():
-    """Entry point."""
-    asyncio.run(download_camera_images())
+    """Entry point: Phase 1 (download existing URLs), then Phase 2 (search for missing)."""
+    import sys
+    skip_search = "--no-search" in sys.argv
+    search_only = "--search-only" in sys.argv
+
+    if search_only:
+        # Phase 2 only: strip broken URLs, then search for missing
+        cameras_path = MERGED_DIR / "cameras.json"
+        cameras = json.loads(cameras_path.read_text())
+        stripped = _strip_undownloaded_urls(cameras)
+        print(f"Stripped {stripped} broken URLs from camera records", flush=True)
+        cameras_path.write_text(json.dumps(cameras, indent=2, ensure_ascii=False))
+        print("Phase 2: searching for missing images", flush=True)
+        asyncio.run(download_camera_images(search_missing=True))
+    elif skip_search:
+        print("Phase 1 only: downloading from existing URLs (skipping search)", flush=True)
+        asyncio.run(download_camera_images(search_missing=False))
+    else:
+        asyncio.run(download_camera_images(search_missing=True))
