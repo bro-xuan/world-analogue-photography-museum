@@ -1,92 +1,148 @@
-"""Search Flickr for CC-licensed camera images.
+"""Search Flickr for CC-licensed camera product images using Scrapling.
 
-Uses the Flickr public API (requires FLICKR_API_KEY env var).
-Searches for photos *of* cameras (not taken *with* cameras) by targeting
-camera collector groups and specific tags.
+Uses a waterfall strategy to find photos OF cameras (not taken BY cameras):
+1. Search within camera collector groups (best signal — all photos are OF cameras)
+2. Fall back to text search with "camera body" + interestingness sort
+
+No API key needed — scrapes Flickr search results via headless browser.
 """
 
 from __future__ import annotations
 
-import os
+import re
+import time
 
-from src.utils.http import RateLimitedClient
+from scrapling import StealthyFetcher
 
-FLICKR_API = "https://www.flickr.com/services/rest/"
+# Shared fetcher instance (reused across calls to keep browser session)
+_fetcher: StealthyFetcher | None = None
+_last_request_time: float = 0.0
+MIN_DELAY = 3.0  # seconds between Flickr requests
 
-# CC license IDs on Flickr
-# 1=CC-BY-NC-SA, 2=CC-BY-NC, 3=CC-BY-NC-ND, 4=CC-BY, 5=CC-BY-SA, 6=CC-BY-ND,
-# 9=CC0, 10=PDM
-CC_LICENSES = "1,2,3,4,5,6,9,10"
-
-# Flickr groups focused on camera collecting (photos *of* cameras)
-CAMERA_COLLECTOR_GROUPS = [
-    "52241291750@N01",  # Vintage Cameras
-    "79963590@N00",     # Classic Camera Collection
-    "14808925@N25",     # Old Cameras
+# Flickr groups where people post photos OF cameras (not taken BY cameras).
+# Ordered by quality/strictness. Search stops at first group with results.
+CAMERA_GROUPS = [
+    "55624923@N00",  # Old Film Cameras (only photos of cameras) — strictest
+    "94898401@N00",  # Camera Appreciation (Pictures of cameras)
+    "54739042@N00",  # Your Camera Collection
 ]
 
-LICENSE_NAMES = {
-    "1": "CC-BY-NC-SA-2.0", "2": "CC-BY-NC-2.0", "3": "CC-BY-NC-ND-2.0",
-    "4": "CC-BY-2.0", "5": "CC-BY-SA-2.0", "6": "CC-BY-ND-2.0",
-    "9": "CC0-1.0", "10": "PDM-1.0",
-}
+
+def _get_fetcher() -> StealthyFetcher:
+    global _fetcher
+    if _fetcher is None:
+        _fetcher = StealthyFetcher()
+    return _fetcher
 
 
-def _photo_url(photo: dict, size: str = "b") -> str:
-    """Construct a Flickr static image URL from photo info.
+def _rate_limit():
+    """Enforce minimum delay between requests."""
+    global _last_request_time
+    now = time.monotonic()
+    elapsed = now - _last_request_time
+    if elapsed < MIN_DELAY:
+        time.sleep(MIN_DELAY - elapsed)
+    _last_request_time = time.monotonic()
 
-    Size suffixes: s=75x75, q=150x150, t=100, m=240, n=320, z=640, c=800, b=1024, h=1600
-    """
-    return (
-        f"https://live.staticflickr.com/{photo['server']}"
-        f"/{photo['id']}_{photo['secret']}_{size}.jpg"
+
+def _extract_images(page, max_results: int) -> list[dict]:
+    """Extract staticflickr image URLs from a Flickr page."""
+    results = []
+    for img in page.css("img"):
+        src = img.attrib.get("src", "")
+        if "live.staticflickr.com" not in src:
+            continue
+
+        # Convert thumbnail URL to 1024px version
+        # Pattern: //live.staticflickr.com/{server}/{id}_{secret}_{size}.jpg
+        big_url = re.sub(r"_[a-z]\.jpg$", "_b.jpg", src)
+        if not big_url.startswith("http"):
+            big_url = "https:" + big_url
+
+        results.append({
+            "url": big_url,
+            "source": "flickr_scrape",
+            "license": "CC",
+            "caption": "Flickr CC-licensed photo",
+        })
+
+        if len(results) >= max_results:
+            break
+
+    return results
+
+
+def _search_groups(query: str, max_results: int) -> list[dict]:
+    """Search within camera collector groups for product photos."""
+    fetcher = _get_fetcher()
+    encoded_query = query.replace(" ", "+")
+
+    for group_id in CAMERA_GROUPS:
+        _rate_limit()
+        encoded_gid = group_id.replace("@", "%40")
+        url = (
+            f"https://www.flickr.com/search/"
+            f"?text={encoded_query}"
+            f"&group_id={encoded_gid}"
+        )
+        try:
+            page = fetcher.fetch(url)
+            if page.status != 200:
+                continue
+            results = _extract_images(page, max_results)
+            if results:
+                return results
+        except Exception:
+            continue
+
+    return []
+
+
+def _search_text(query: str, max_results: int) -> list[dict]:
+    """Text search with 'camera body' qualifier and interestingness sort."""
+    fetcher = _get_fetcher()
+    encoded_query = (query + " camera body").replace(" ", "+")
+    # CC licenses: 2=CC-BY-NC, 3=CC-BY-NC-ND, 4=CC-BY, 5=CC-BY-SA, 6=CC-BY-ND, 9=CC0
+    url = (
+        f"https://www.flickr.com/search/"
+        f"?text={encoded_query}"
+        f"&license=2%2C3%2C4%2C5%2C6%2C9"
+        f"&sort=interestingness-desc"
     )
+    _rate_limit()
+    try:
+        page = fetcher.fetch(url)
+        if page.status != 200:
+            return []
+        return _extract_images(page, max_results)
+    except Exception:
+        return []
 
 
-async def search_flickr_images(
+def search_flickr_images(
     camera_name: str,
     manufacturer: str,
-    client: RateLimitedClient,
+    max_results: int = 1,
 ) -> list[dict] | None:
-    """Search Flickr for CC-licensed images of a camera.
+    """Search Flickr for CC-licensed product photos of a camera.
+
+    Uses a waterfall strategy:
+    1. Search camera collector groups (photos are OF cameras, not taken BY them)
+    2. Fall back to text search with "camera body" + interestingness sort
 
     Returns list of {"url", "source", "license", "caption"} or None.
     """
-    api_key = os.environ.get("FLICKR_API_KEY")
-    if not api_key:
-        return None
-
-    query = f"{manufacturer} {camera_name} camera" if manufacturer else f"{camera_name} camera"
-    params = {
-        "method": "flickr.photos.search",
-        "api_key": api_key,
-        "text": query,
-        "license": CC_LICENSES,
-        "media": "photos",
-        "content_type": "1",  # photos only
-        "sort": "relevance",
-        "per_page": "5",
-        "format": "json",
-        "nojsoncallback": "1",
-        "extras": "license,owner_name",
-    }
+    query = f"{manufacturer} {camera_name}" if manufacturer else camera_name
 
     try:
-        resp = await client.get(FLICKR_API, params=params)
-        data = resp.json()
-        photos = data.get("photos", {}).get("photo", [])
-        if not photos:
-            return None
+        # Pass 1: Search camera collector groups
+        results = _search_groups(query, max_results)
+        if results:
+            return results
 
-        results = []
-        for photo in photos[:3]:
-            license_id = str(photo.get("license", ""))
-            results.append({
-                "url": _photo_url(photo, "b"),
-                "source": "flickr_search",
-                "license": LICENSE_NAMES.get(license_id, f"flickr-license-{license_id}"),
-                "caption": f"Photo by {photo.get('ownername', 'unknown')} on Flickr",
-            })
+        # Pass 2: Text search fallback
+        results = _search_text(query, max_results)
         return results if results else None
-    except Exception:
+    except Exception as e:
+        print(f"  Flickr scrape failed for {query}: {e}", flush=True)
         return None

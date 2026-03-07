@@ -3,7 +3,7 @@
 For cameras without images, searches multiple sources in waterfall order:
 1. Wikidata P18 property
 2. Wikimedia Commons search
-3. Flickr CC-licensed images (requires FLICKR_API_KEY)
+3. Flickr CC-licensed images (Scrapling scraper, no API key)
 4. Museum APIs (Smithsonian, Science Museum Group)
 """
 
@@ -248,7 +248,7 @@ def _strip_undownloaded_urls(cameras: list[dict]) -> int:
     return stripped
 
 
-async def download_camera_images(max_per_camera: int = 1, search_missing: bool = True) -> dict:
+async def download_camera_images(max_per_camera: int = 3, search_missing: bool = True) -> dict:
     """Download images for all merged cameras.
 
     Phase 1: Download from existing URLs (fast, collectiblend/chinesecamera/etc.)
@@ -265,37 +265,49 @@ async def download_camera_images(max_per_camera: int = 1, search_missing: bool =
 
     CAMERAS_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Pre-pass: match existing downloaded files back to cameras by expected filename
-    existing_files = {f.name for f in CAMERAS_IMAGES_DIR.iterdir() if f.is_file()}
-    if existing_files:
-        matched = 0
-        project_root = Path(__file__).resolve().parent.parent.parent
-        for camera in cameras:
-            mfr = camera.get("manufacturer_normalized", "")
-            name = camera.get("name", "unknown")
-            safe_name = _sanitize_filename(f"{mfr}_{name}")
-            # Check if any file on disk matches this camera's expected name
-            local_file = None
-            for ext in ("jpg", "jpeg", "png"):
-                candidate = f"{safe_name}.{ext}"
-                if candidate in existing_files:
-                    local_file = candidate
-                    break
-            if not local_file:
-                continue
-            # Set local_path on the first image record (or add a synthetic one)
-            rel_path = str((CAMERAS_IMAGES_DIR / local_file).relative_to(project_root))
-            images = camera.get("images", [])
-            if images:
-                if not images[0].get("local_path"):
+    # Pre-pass: match existing downloaded files back to cameras
+    # Supports both old flat structure (mfr_name.jpg) and new folder structure (mfr/name/main.jpg)
+    existing_flat = {f.name for f in CAMERAS_IMAGES_DIR.iterdir() if f.is_file()}
+    matched = 0
+    project_root = Path(__file__).resolve().parent.parent.parent
+    for camera in cameras:
+        if any(img.get("local_path") for img in camera.get("images", [])):
+            continue  # Already linked
+        mfr = camera.get("manufacturer_normalized", "")
+        name = camera.get("name", "unknown")
+        safe_mfr = _sanitize_filename(mfr) if mfr else "unknown"
+        safe_name = _sanitize_filename(name)
+
+        # Check new folder structure first
+        camera_dir = CAMERAS_IMAGES_DIR / safe_mfr / safe_name
+        if camera_dir.is_dir():
+            files = sorted(camera_dir.iterdir())
+            if files:
+                rel_path = str(files[0].relative_to(project_root))
+                images = camera.get("images", [])
+                if images:
                     images[0]["local_path"] = rel_path
-                    matched += 1
-            else:
-                camera["images"] = [{"url": "", "source": "local", "local_path": rel_path}]
+                else:
+                    camera["images"] = [{"url": "", "source": "local", "local_path": rel_path}]
                 matched += 1
-        if matched:
-            print(f"  Matched {matched} existing local files to camera records", flush=True)
-            stats["already_local"] = matched
+                continue
+
+        # Fall back to old flat structure
+        old_name = _sanitize_filename(f"{mfr}_{name}")
+        for ext in ("jpg", "jpeg", "png"):
+            candidate = f"{old_name}.{ext}"
+            if candidate in existing_flat:
+                rel_path = str((CAMERAS_IMAGES_DIR / candidate).relative_to(project_root))
+                images = camera.get("images", [])
+                if images:
+                    images[0]["local_path"] = rel_path
+                else:
+                    camera["images"] = [{"url": "", "source": "local", "local_path": rel_path}]
+                matched += 1
+                break
+    if matched:
+        print(f"  Matched {matched} existing local files to camera records", flush=True)
+        stats["already_local"] = matched
 
     async with RateLimitedClient(min_delay=3.0, verify_ssl=False) as client:
         for i, camera in enumerate(cameras):
@@ -358,9 +370,9 @@ async def download_camera_images(max_per_camera: int = 1, search_missing: bool =
                             break
                 stats["searched"] += 1
 
-                # Try Flickr CC search
+                # Try Flickr CC search (synchronous, uses Scrapling)
                 if not commons_url:
-                    flickr_results = await search_flickr_images(name, mfr, client)
+                    flickr_results = search_flickr_images(name, mfr, max_results=max_per_camera)
                     if flickr_results:
                         commons_url = flickr_results[0]["url"]
                         camera.setdefault("images", []).extend(flickr_results)
@@ -391,9 +403,13 @@ async def download_camera_images(max_per_camera: int = 1, search_missing: bool =
                               f"found={stats['downloaded']}, not_found={stats['skipped']}", flush=True)
                     continue
 
-            # Download the first real image
+            # Download images into per-camera folder
+            safe_mfr = _sanitize_filename(mfr) if mfr else "unknown"
+            safe_camera = _sanitize_filename(name)
+            camera_dir = CAMERAS_IMAGES_DIR / safe_mfr / safe_camera
             downloaded_count = 0
-            for img in real_images[:max_per_camera]:
+
+            for img_idx, img in enumerate(real_images[:max_per_camera]):
                 url = img.get("url", "")
                 if not url:
                     continue
@@ -417,8 +433,8 @@ async def download_camera_images(max_per_camera: int = 1, search_missing: bool =
                         continue
 
                 ext = _ext_from_url(download_url)
-                safe_name = _sanitize_filename(f"{mfr}_{name}")
-                dest = CAMERAS_IMAGES_DIR / f"{safe_name}.{ext}"
+                filename = f"{img_idx + 1}.{ext}" if img_idx > 0 else f"main.{ext}"
+                dest = camera_dir / filename
 
                 # If file exists, just link it (don't re-download)
                 if dest.exists():
@@ -426,13 +442,6 @@ async def download_camera_images(max_per_camera: int = 1, search_missing: bool =
                     downloaded_count += 1
                     stats["already_local"] += 1
                     continue
-
-                # Find unique filename for new download
-                if dest.exists():
-                    suffix = 2
-                    while (CAMERAS_IMAGES_DIR / f"{safe_name}_{suffix}.{ext}").exists():
-                        suffix += 1
-                    dest = CAMERAS_IMAGES_DIR / f"{safe_name}_{suffix}.{ext}"
 
                 success = await client.download_file(download_url, dest)
 

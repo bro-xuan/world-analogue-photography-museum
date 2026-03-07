@@ -13,6 +13,19 @@ dependencies = [
     "scrapling>=0.2",
 ]
 
+[project.optional-dependencies]
+processing = [
+    "iopaint",
+    "diffusers",
+    "transformers",
+    "accelerate",
+    "Pillow",
+    "safetensors",
+    "rembg[cpu]",
+    "opencv-python",
+    "easyocr>=1.7",
+]
+
 [project.scripts]
 collect-wikidata = "src.collectors.wikidata:main"
 collect-flickr = "src.collectors.flickr:main"

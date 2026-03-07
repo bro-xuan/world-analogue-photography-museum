@@ -8,12 +8,12 @@ from __future__ import annotations
 # Canonical name -> known aliases (all lowercase for matching)
 MANUFACTURER_ALIASES: dict[str, list[str]] = {
     "Nikon": ["nippon kogaku", "nippon kogaku k.k.", "nippon kogaku k. k.", "nikon corporation", "nikon (nippon kogaku k. k.)"],
-    "Canon": ["canon camera co.", "canon camera company", "canon inc.", "canon inc"],
+    "Canon": ["canon camera co.", "canon camera company", "canon inc.", "canon inc", "canonet"],
     "Minolta": ["chiyoda kogaku", "chiyoda optics", "minolta camera co."],
     "Konica Minolta": ["konica minolta holdings"],
     "Konica": ["konishiroku", "konica corporation"],
     "Olympus": ["olympus optical co.", "olympus corporation", "olympus optical", "om digital solutions", "olympus optical co.,", "olympus optical co., ltd."],
-    "Pentax": ["asahi optical", "asahi pentax", "asahi optical co.", "asahi"],
+    "Pentax": ["asahi optical", "asahi pentax", "asahi optical co.", "asahi", "asahi optical co.,"],
     "Fujifilm": ["fuji photo film", "fuji film", "fuji", "fujifilm holdings"],
     "Kodak": ["eastman kodak", "eastman kodak company", "kodak", "kodak eastman", "kodak's"],
     "Leica": ["ernst leitz", "leitz", "leica camera", "leica camera ag", "leitz (leica)"],
@@ -24,7 +24,7 @@ MANUFACTURER_ALIASES: dict[str, list[str]] = {
     "Hasselblad": ["victor hasselblad", "hasselblad"],
     "Polaroid": ["polaroid corporation"],
     "Voigtlander": ["voigtländer", "voigtlaender", "voigtlander"],
-    "Zeiss Ikon": ["zeiss ikon", "carl zeiss"],
+    "Zeiss": ["zeiss", "zeiss ikon", "carl zeiss"],
     "Agfa": ["agfa-gevaert", "agfa", "agfa-ansco"],
     "Ilford": ["ilford photo", "ilford imaging"],
     "Bronica": ["zenza bronica", "bronica"],
@@ -66,7 +66,7 @@ MANUFACTURER_ALIASES: dict[str, list[str]] = {
     "Changle": ["长乐"],
     "Huashan": ["华山"],
     "Tianjin": ["天津", "tianjin camera"],
-    "Diana": ["diana", "great wall plastic works", "great wall plastic factory"],
+    "Diana": ["diana", "great wall plastic works", "great wall plastic factory", "great wall plastic factory, lomographische"],
     "Dongfang": ["东方", "dongfang", "orient", "tianjin camera factory"],
     "Youyi": ["友谊", "friendship", "wuxi camera"],
     "Hongmei": ["红梅", "red plum", "changzhou camera"],
@@ -160,6 +160,8 @@ MANUFACTURER_ALIASES: dict[str, list[str]] = {
     "Alpa": ["alpa", "pignons (alpa)", "pignons"],
     "Revere": ["revere", "revere camera"],
     "Argus": ["argus", "argus camera"],
+    "Halina": ["halina", "halina/ansco"],
+    "Shenhao": ["shenhao", "shen hao"],
 }
 
 # Build reverse lookup: lowercase alias -> canonical name
@@ -196,7 +198,7 @@ MANUFACTURER_COUNTRIES: dict[str, str] = {
     "Contax": "Germany",
     "Rollei": "Germany",
     "Voigtlander": "Germany",
-    "Zeiss Ikon": "Germany",
+    "Zeiss": "Germany",
     "Linhof": "Germany",
     # Swedish
     "Hasselblad": "Sweden",
@@ -333,6 +335,8 @@ MANUFACTURER_COUNTRIES: dict[str, str] = {
     "Alpa": "Switzerland",
     "Revere": "USA",
     "Argus": "USA",
+    "Halina": "Hong Kong",
+    "Shenhao": "China",
 }
 
 
