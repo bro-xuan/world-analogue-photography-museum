@@ -7,6 +7,34 @@ from pathlib import Path
 
 sys.path.insert(0, ".")
 
+# Normalize raw camera_type values into clean display labels.
+_CAMERA_TYPE_MAP: dict[str, str] = {
+    "slr": "SLR",
+    "tlr": "TLR",
+    "rangefinder": "Rangefinder",
+    "point-and-shoot": "Point & Shoot",
+    "folding": "Folding",
+    "box camera": "Box",
+    "view camera": "View",
+    "instant": "Instant",
+    "panoramic": "Panoramic",
+    "swing-lens panoramic camera": "Panoramic",
+    "35 mm swing-lens panoramic": "Panoramic",
+    "stereo": "Stereo",
+    "toy camera": "Toy",
+    "medium format": "Medium Format",
+    "35 mm bridge": "Bridge",
+    "subminiature camera": "Subminiature",
+    "full frame milc": "Mirrorless",
+    "aps-c milc": "Mirrorless",
+}
+
+
+def _normalize_camera_type(raw: str | None) -> str | None:
+    if not raw:
+        return None
+    return _CAMERA_TYPE_MAP.get(raw.lower().strip())
+
 
 def _has_image_on_disk(cam: dict) -> str | None:
     for img in cam.get("images", []):
@@ -41,6 +69,44 @@ def _display_name(cam: dict) -> str:
     return name
 
 
+def _build_related_cameras(
+    detail_map: dict[str, dict],
+    mfr_index: dict[str, list[tuple[str, dict]]],
+) -> None:
+    """Add relatedCameras to each entry: up to 6 from same manufacturer, sorted by year proximity."""
+    for cam_id, entry in detail_map.items():
+        mfr = entry.get("manufacturer", "")
+        siblings = mfr_index.get(mfr, [])
+        if len(siblings) <= 1:
+            continue
+
+        cam_year = entry.get("year")
+
+        # Sort siblings by year proximity to this camera
+        def sort_key(item: tuple[str, dict]) -> tuple[int, str]:
+            sid, sib = item
+            if cam_year and sib.get("year"):
+                return (abs(sib["year"] - cam_year), sib.get("name", ""))
+            # No year: sort to end, alphabetically
+            return (999999, sib.get("name", ""))
+
+        related = []
+        for sid, sib in sorted(siblings, key=sort_key):
+            if sid == cam_id:
+                continue
+            rel: dict = {"id": sid, "name": sib["name"]}
+            if sib.get("images"):
+                rel["image"] = sib["images"][0]
+            if sib.get("year"):
+                rel["year"] = sib["year"]
+            related.append(rel)
+            if len(related) >= 6:
+                break
+
+        if related:
+            entry["relatedCameras"] = related
+
+
 def main():
     data_path = Path("data/merged/cameras.json")
     if not data_path.exists():
@@ -51,6 +117,7 @@ def main():
     print(f"Loaded {len(cameras)} cameras")
 
     detail_map: dict[str, dict] = {}
+    mfr_index: dict[str, list[tuple[str, dict]]] = {}
     skipped_no_desc = 0
     skipped_no_img = 0
 
@@ -82,14 +149,7 @@ def main():
         if cam.get("dimensions"):
             specs["dimensions"] = cam["dimensions"]
 
-        # Source URLs for attribution
-        source_urls = []
-        for src in cam.get("sources", []):
-            url = src.get("source_url")
-            if url:
-                source_urls.append({"name": src.get("source", ""), "url": url})
-
-        entry = {
+        entry: dict = {
             "name": _display_name(cam),
             "manufacturer": cam.get("manufacturer_normalized")
             or cam.get("manufacturer")
@@ -100,22 +160,47 @@ def main():
             "yearEnd": cam.get("year_discontinued"),
             "images": [_image_path(p) for p in images],
             "specs": specs if specs else None,
-            "sources": source_urls if source_urls else None,
             "priceLaunch": cam.get("price_launch_usd"),
             "priceMarket": cam.get("price_market_usd"),
         }
+
+        # Camera type (normalized)
+        ct = _normalize_camera_type(cam.get("camera_type"))
+        if ct:
+            entry["cameraType"] = ct
+
+        # Inflation-adjusted price
+        pa = cam.get("price_adjusted_usd")
+        if pa:
+            entry["priceAdjusted"] = round(pa)
 
         # Remove None values
         entry = {k: v for k, v in entry.items() if v is not None}
 
         detail_map[short_id] = entry
 
+        # Track manufacturer index for related cameras
+        mfr = entry.get("manufacturer", "")
+        if mfr:
+            mfr_index.setdefault(mfr, []).append((short_id, entry))
+
+    # Second pass: compute related cameras
+    _build_related_cameras(detail_map, mfr_index)
+
     out_path = Path("web/public/data/cameras_detail.json")
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(detail_map, ensure_ascii=False, separators=(",", ":")))
 
+    # Stats
+    n_type = sum(1 for e in detail_map.values() if "cameraType" in e)
+    n_adj = sum(1 for e in detail_map.values() if "priceAdjusted" in e)
+    n_rel = sum(1 for e in detail_map.values() if "relatedCameras" in e)
+
     print(f"\nWrote {out_path}")
     print(f"  Cameras with detail pages: {len(detail_map)}")
+    print(f"  With cameraType: {n_type}")
+    print(f"  With priceAdjusted: {n_adj}")
+    print(f"  With relatedCameras: {n_rel}")
     print(f"  Skipped (no description): {skipped_no_desc}")
     print(f"  Skipped (no image): {skipped_no_img}")
 

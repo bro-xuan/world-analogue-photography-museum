@@ -13,6 +13,13 @@ export interface LandingData {
   cameras: CameraEntry[];
 }
 
+export interface RelatedCamera {
+  id: string;
+  name: string;
+  image?: string;
+  year?: number;
+}
+
 export interface CameraDetail {
   name: string;
   manufacturer: string;
@@ -22,9 +29,11 @@ export interface CameraDetail {
   yearEnd?: number;
   images: string[];
   specs?: Record<string, string>;
-  sources?: { name: string; url: string }[];
   priceLaunch?: number;
   priceMarket?: number;
+  cameraType?: string;
+  priceAdjusted?: number;
+  relatedCameras?: RelatedCamera[];
 }
 
 export async function loadLandingData(): Promise<LandingData> {
