@@ -3,6 +3,8 @@ data/processed/
 data/merged/
 data/images/
 data/reports/
+data/*.html
+data/*.json
 .env
 __pycache__/
 *.pyc

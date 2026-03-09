@@ -13,7 +13,6 @@ import re
 from pathlib import Path
 from urllib.parse import unquote
 
-from src.images.flickr_search import search_flickr_images
 from src.images.museum_search import search_museum_images
 from src.utils.data_io import IMAGES_DIR, MERGED_DIR
 from src.utils.http import RateLimitedClient
@@ -372,11 +371,15 @@ async def download_camera_images(max_per_camera: int = 3, search_missing: bool =
 
                 # Try Flickr CC search (synchronous, uses Scrapling)
                 if not commons_url:
-                    flickr_results = search_flickr_images(name, mfr, max_results=max_per_camera)
-                    if flickr_results:
-                        commons_url = flickr_results[0]["url"]
-                        camera.setdefault("images", []).extend(flickr_results)
-                        real_images = flickr_results
+                    try:
+                        from src.images.flickr_search import search_flickr_images
+                        flickr_results = search_flickr_images(name, mfr, max_results=max_per_camera)
+                        if flickr_results:
+                            commons_url = flickr_results[0]["url"]
+                            camera.setdefault("images", []).extend(flickr_results)
+                            real_images = flickr_results
+                    except ImportError:
+                        pass  # scrapling/patchright not installed, skip Flickr
 
                 # Try Museum APIs
                 if not commons_url:

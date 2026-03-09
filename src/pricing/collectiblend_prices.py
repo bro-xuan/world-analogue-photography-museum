@@ -56,7 +56,7 @@ def _parse_market_price(html: str) -> float | None:
     return None
 
 
-async def _scrape_market_prices() -> None:
+async def _scrape_market_prices(limit: int = 0) -> None:
     """Scrape market prices from collectiblend detail pages."""
     cameras_path = MERGED_DIR / "cameras.json"
     if not cameras_path.exists():
@@ -75,14 +75,23 @@ async def _scrape_market_prices() -> None:
                     targets.append((idx, url))
                     break
 
-    print(f"Found {len(targets)} cameras with collectiblend detail pages")
+    # Skip cameras that already have market prices
+    targets = [(idx, url) for idx, url in targets if not cameras[idx].get("price_market_usd")]
+    print(f"Found {len(targets)} cameras needing market prices")
+    if limit > 0:
+        targets = targets[:limit]
+        print(f"  Limiting to first {limit}")
 
     updated = 0
     errors = 0
     async with RateLimitedClient(min_delay=2.0) as client:
         for i, (idx, url) in enumerate(targets):
             if (i + 1) % 50 == 0:
-                print(f"  Processing {i + 1}/{len(targets)}... ({updated} prices found)")
+                print(f"  Processing {i + 1}/{len(targets)}... ({updated} prices found)", flush=True)
+                # Save progress every 500
+            if (i + 1) % 500 == 0:
+                cameras_path.write_text(json.dumps(cameras, indent=2, ensure_ascii=False))
+                print(f"  Saved progress at {i + 1}", flush=True)
 
             try:
                 resp = await client.get(url)
@@ -93,19 +102,25 @@ async def _scrape_market_prices() -> None:
             except Exception as e:
                 errors += 1
                 if errors <= 10:
-                    print(f"  Error fetching {url}: {e}")
+                    print(f"  Error fetching {url}: {e}", flush=True)
 
-    print(f"\nMarket prices found: {updated}/{len(targets)}")
-    print(f"Errors: {errors}")
+    print(f"\nMarket prices found: {updated}/{len(targets)}", flush=True)
+    print(f"Errors: {errors}", flush=True)
 
     # Save updated cameras
     cameras_path.write_text(json.dumps(cameras, indent=2, ensure_ascii=False))
-    print(f"Saved updated cameras to {cameras_path}")
+    print(f"Saved updated cameras to {cameras_path}", flush=True)
 
 
 def main() -> None:
     """Entry point for collectiblend market price scraping."""
-    asyncio.run(_scrape_market_prices())
+    import sys
+
+    limit = 0
+    for i, arg in enumerate(sys.argv[1:], 1):
+        if arg == "--limit" and i < len(sys.argv):
+            limit = int(sys.argv[i + 1])
+    asyncio.run(_scrape_market_prices(limit=limit))
 
 
 if __name__ == "__main__":

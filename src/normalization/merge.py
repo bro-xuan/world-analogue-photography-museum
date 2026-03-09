@@ -17,6 +17,7 @@ from pathlib import Path
 from thefuzz import fuzz
 
 from src.normalization.manufacturers import get_manufacturer_country, normalize_manufacturer
+from src.patterns.digital import is_digital_camera
 from src.utils.data_io import MERGED_DIR, load_records, save_merged
 
 SOURCES_PRIORITY = ["wikidata", "wikipedia", "camerawiki", "chinesecamera", "collectiblend", "flickr"]
@@ -294,129 +295,6 @@ _COLLECTIBLEND_COUNTRY_CATEGORIES = {
     "uruguay",
 }
 
-# Patterns for digital cameras (not analogue)
-_DIGITAL_PATTERNS = [
-    re.compile(r"\bdigital\b", re.I),
-    re.compile(r"\bDSLR\b", re.I),
-    re.compile(r"\bmirrorless\b", re.I),
-    re.compile(r"\bEOS\s*\d+D\b", re.I),
-    re.compile(r"\bEOS\s*R\d", re.I),
-    re.compile(r"\bEOS\s*M\d", re.I),
-    re.compile(r"\bEOS\s*C\d", re.I),  # Canon Cinema EOS
-    re.compile(r"\bD-SLR\b", re.I),
-    re.compile(r"\bPowerShot\b", re.I),
-    re.compile(r"\bCoolPix\b", re.I),
-    re.compile(r"\bCyber-shot\b", re.I),
-    re.compile(r"\bLumix\b", re.I),
-    re.compile(r"\bNEX-", re.I),
-    re.compile(r"\bILCE-", re.I),
-    re.compile(r"\bSLT-", re.I),
-    re.compile(r"\bGoPro\b", re.I),
-    re.compile(r"\biPhone\b", re.I),
-    re.compile(r"\bGalaxy\s*Camera\b", re.I),
-    re.compile(r"\bDSC-[A-Z]\d", re.I),
-    re.compile(r"\bDMC-", re.I),
-    re.compile(r"\bDC-", re.I),
-    re.compile(r"\bOM-D\b", re.I),
-    re.compile(r"\bGFX\b", re.I),
-    re.compile(r"\bwebcam\b", re.I),
-    re.compile(r"\bDashCam\b", re.I),
-    re.compile(r"\bExilim\b", re.I),
-    re.compile(r"\bOptio\b", re.I),
-    re.compile(r"\bPixii\b", re.I),
-    # Olympus digital compacts
-    re.compile(r"\bOlympus\s+C-\d{3,4}\b", re.I),
-    re.compile(r"\bCamedia\b", re.I),
-    # Leica digital series (but NOT the 1973 film Leica CL)
-    re.compile(r"\bLeica\s+X[\s-]", re.I),
-    re.compile(r"\bLeica\s+X$", re.I),
-    re.compile(r"\bLeica\s+Q\d*\b", re.I),
-    re.compile(r"\bLeica\s+SL\d*\b", re.I),
-    re.compile(r"\bLeica\s+TL\d*\b", re.I),
-    # Nikon digital
-    re.compile(r"\bNikon\s+1\s+", re.I),
-    re.compile(r"\bNikon\s+Z\d", re.I),
-    re.compile(r"\bNikon\s+Zf\b", re.I),
-    re.compile(r"\bNikon\s+ZR\b", re.I),
-    # Other digital compacts/series
-    re.compile(r"\bFinePix\s+[FZJ]\d", re.I),
-    re.compile(r"\bPentax\s+Q\b", re.I),
-    re.compile(r"\bSamsung\s+NX", re.I),
-    re.compile(r"\bSony\s+[αa]\d{4}\b", re.I),
-    re.compile(r"\bPanasonic\s+AG-", re.I),
-    # Fujifilm digital
-    re.compile(r"\bFinePix\b", re.I),
-    re.compile(r"\bFujifilm\s+X-[A-Z]\d", re.I),  # X-S1, X-T1, X-E1, etc.
-    re.compile(r"\bFujifilm\s+X\d{2,}", re.I),  # X20, X100, etc.
-    re.compile(r"\bFujifilm\s+DX-", re.I),
-    re.compile(r"\bFujifilm\s+XF\d", re.I),
-    # Leica digital
-    re.compile(r"\bDigilux\b", re.I),
-    re.compile(r"\bD-Lux\b", re.I),
-    re.compile(r"\bV-Lux\b", re.I),
-    # Olympus digital
-    re.compile(r"\bOlympus\s+FE-", re.I),
-    re.compile(r"\bOlympus\s+VR-", re.I),
-    re.compile(r"\bOlympus\s+VH-", re.I),
-    re.compile(r"\bOlympus\s+SZ-", re.I),
-    re.compile(r"\bOlympus\s+SP-", re.I),
-    re.compile(r"\bOlympus\s+SH-", re.I),
-    re.compile(r"\bOlympus\s+TG-", re.I),
-    re.compile(r"\bOlympus\s+E-\d{3,}", re.I),  # E-300, E-500, etc.
-    re.compile(r"\bOlympus\s+PEN\s+E-", re.I),  # PEN E-PL series
-    re.compile(r"\bTough\s+TG-", re.I),
-    re.compile(r"\bOM\s+System\b", re.I),
-    # HP/other digital compacts
-    re.compile(r"\bPhotosmart\b", re.I),
-    re.compile(r"\bPhotoSmart\b", re.I),
-    re.compile(r"\bEasyShare\b", re.I),
-    # Sony digital
-    re.compile(r"\bSony\s+RX\d", re.I),
-    re.compile(r"\bSony\s+ZV-", re.I),
-    # Ricoh digital
-    re.compile(r"\bRicoh\s+GR\b", re.I),  # GR digital
-    re.compile(r"\bRicoh\s+GXR\b", re.I),
-    re.compile(r"\bRicoh\s+WG-", re.I),
-    re.compile(r"\bRicoh\s+G\d{3}", re.I),  # G700, G900
-    re.compile(r"\bRicoh\s+Caplio\b", re.I),
-    re.compile(r"\bPentax\s+\*?ist\b", re.I),  # Pentax *ist series (DSLR)
-    re.compile(r"\bPentax\s+K-[1-9]\d?\b", re.I),  # Pentax K-1, K-3, K-5, K-7 (DSLR, not K1000)
-    re.compile(r"\bK\d{2,3}D\b", re.I),  # K10D, K20D, K100D, K200D
-    re.compile(r"\bPentax\s+KP\b", re.I),
-    re.compile(r"\bPentax\s+KF\b", re.I),
-    re.compile(r"\bPentax\s+K-S\d", re.I),  # K-S1, K-S2
-    re.compile(r"\bPentax\s+K-r\b", re.I),
-    # Samsung digital
-    re.compile(r"\bDigimax\b", re.I),
-    # Olympus digital compacts
-    re.compile(r"\bStylus\s+SH\b", re.I),
-    re.compile(r"\bOlympus\s+Stylus\s+1\b", re.I),  # Stylus 1 (digital compact)
-    re.compile(r"\bOlympus\s+Stylus\s+Tough\b", re.I),
-    # Camcorders
-    re.compile(r"\bHandycam\b", re.I),
-    re.compile(r"\bHF\s+[SRM]\d", re.I),  # Canon HF series
-    re.compile(r"\bcamcorder\b", re.I),
-    # Pentax digital
-    re.compile(r"\bPentax\s+MX-1\b", re.I),
-    # camera_type indicators
-    re.compile(r"Still image camera with motion capability", re.I),
-]
-
-# Specific camera names/models that are digital (not caught by patterns)
-_DIGITAL_NAMES = {
-    "olympus air", "sigma fp", "zeiss zx1", "epson r-d1", "red epic",
-    "leica x1", "leica m8", "leica m9", "leica m10", "leica m11",
-    "leica m (typ 240)", "leica m (typ 262)", "leica m monochrom",
-    "leica m monochrom (typ 246)", "leica m-d (typ 262)", "leica m-e",
-    "leica m-e (typ 240)", "leica m10 monochrom", "leica m10-d",
-    "pentax x-5", "pentax x90", "pentax xg-1",
-    "rollei qz cameras", "samsung galaxy camera", "samsung galaxy camera 2",
-    "hello kitty pocket camera",
-    # Leica CL digital (2017+) — NOT the 1973 film Leica CL
-    "leica cl 'betriebskamera'",
-    # Olympus digital compacts with alphanumeric suffixes not caught by C-\d{3,4}
-    "olympus c-730uz",
-}
 
 
 def _is_non_retail(record: dict) -> bool:
@@ -437,30 +315,6 @@ def _is_non_retail(record: dict) -> bool:
         return True
     if mfr in _WIKI_NOISE_MANUFACTURERS:
         return True
-    return False
-
-
-# Manufacturers that only made digital cameras (never analogue)
-_DIGITAL_ONLY_MANUFACTURERS = {
-    "hewlett packard", "hp",
-    "benq", "acer", "dell", "gateway", "mustek",
-    "om system",
-}
-
-
-def _is_digital(record: dict) -> bool:
-    """Check if a camera is digital (not analogue)."""
-    name = record.get("name", "")
-    if name.lower() in _DIGITAL_NAMES:
-        return True
-    mfr = (record.get("manufacturer_normalized") or record.get("manufacturer", "")).lower()
-    if mfr in _DIGITAL_ONLY_MANUFACTURERS:
-        return True
-    cam_type = record.get("camera_type", "") or ""
-    text = f"{name} {cam_type}"
-    for pat in _DIGITAL_PATTERNS:
-        if pat.search(text):
-            return True
     return False
 
 
@@ -646,7 +500,11 @@ def merge_cameras() -> tuple[list[dict], dict]:
     non_retail_count = before - len(merged)
     # Filter out digital cameras (this is an analogue photography museum)
     before2 = len(merged)
-    merged = [r for r in merged if not _is_digital(r)]
+    merged = [r for r in merged if not is_digital_camera(
+        name=r.get("name", ""),
+        camera_type=r.get("camera_type", "") or "",
+        manufacturer=(r.get("manufacturer_normalized") or r.get("manufacturer", "")).lower(),
+    )]
     digital_count = before2 - len(merged)
     total_filtered = non_retail_count + digital_count
     if total_filtered:

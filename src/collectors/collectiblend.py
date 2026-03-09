@@ -13,68 +13,12 @@ from src.normalization.manufacturers import (
     get_manufacturer_country,
     normalize_manufacturer,
 )
+from src.patterns.digital import is_digital_name
 from src.utils.data_io import save_records
 from src.utils.http import RateLimitedClient
 
 BASE_URL = "https://collectiblend.com"
 CAMERAS_URL = f"{BASE_URL}/Cameras/"
-
-# ---------------------------------------------------------------------------
-# Digital camera filtering (reused patterns from flickr.py)
-# ---------------------------------------------------------------------------
-
-_DIGITAL_PATTERNS: list[re.Pattern[str]] = [
-    re.compile(r"\bdigital\b", re.I),
-    re.compile(r"\bDSLR\b", re.I),
-    re.compile(r"\bmirrorless\b", re.I),
-    re.compile(r"\bEOS\s*\d+D\b", re.I),
-    re.compile(r"\bEOS\s*D\d", re.I),
-    re.compile(r"\bD-SLR\b", re.I),
-    re.compile(r"\bPowerShot\b", re.I),
-    re.compile(r"\bCoolPix\b", re.I),
-    re.compile(r"\bCOOLPIX\b"),
-    re.compile(r"\bCyber-shot\b", re.I),
-    re.compile(r"\bFinePix\s*[SZFJAV][VXZ]?\d", re.I),
-    re.compile(r"\bFinePix\s*(?:HS|T|XP|JV|JX|JZ|AX|AV)\d", re.I),
-    re.compile(r"\bFinePix\s*S\d{3,}", re.I),
-    re.compile(r"\bLumix\b", re.I),
-    re.compile(r"\bAlpha\s*(?:DSLR|NEX|SLT|ILCE)\b", re.I),
-    re.compile(r"\bNEX-", re.I),
-    re.compile(r"\bILCE-", re.I),
-    re.compile(r"\bSLT-", re.I),
-    re.compile(r"\bEOS\s*R\d", re.I),
-    re.compile(r"\bEOS\s*M\d", re.I),
-    re.compile(r"\bEOS\s*\d{3,}D\b", re.I),
-    re.compile(r"\bD\d{2,4}\b", re.I),  # Nikon D50, D200, D7000
-    re.compile(r"\bGoPro\b", re.I),
-    re.compile(r"\biPhone\b", re.I),
-    re.compile(r"\bPixel\b", re.I),
-    re.compile(r"\bGalaxy\b", re.I),
-    re.compile(r"\bDrone\b", re.I),
-    re.compile(r"\bAction\s*Cam", re.I),
-    re.compile(r"\bDSC-[A-Z]\d", re.I),
-    re.compile(r"\bDMC-", re.I),
-    re.compile(r"\bDC-", re.I),
-    re.compile(r"\bE-[PM]\d", re.I),
-    re.compile(r"\bE-\d{3,}", re.I),
-    re.compile(r"\bPEN\s*E-P", re.I),
-    re.compile(r"\bOM-D\b", re.I),
-    re.compile(r"\bX-[TEASMHP]\d", re.I),
-    re.compile(r"\bGFX\b", re.I),
-    re.compile(r"\bGR\s*(?:III|IV|Digital)\b", re.I),
-    re.compile(r"\bK-\d{1,2}\b", re.I),
-    re.compile(r"\bwebcam\b", re.I),
-    re.compile(r"\bDashCam\b", re.I),
-    re.compile(r"\bIP\s*Cam", re.I),
-]
-
-
-def _is_digital(name: str) -> bool:
-    """Return True if the camera name matches known digital patterns."""
-    for pat in _DIGITAL_PATTERNS:
-        if pat.search(name):
-            return True
-    return False
 
 
 def _parse_year_range(text: str) -> tuple[int | None, int | None]:
@@ -273,7 +217,7 @@ async def _collect() -> None:
                 camera_name = row["name"]
 
                 # Filter digital cameras
-                if _is_digital(camera_name):
+                if is_digital_name(camera_name):
                     total_skipped_digital += 1
                     continue
 

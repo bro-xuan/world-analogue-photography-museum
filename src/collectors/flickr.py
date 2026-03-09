@@ -10,6 +10,7 @@ from scrapling import StealthyFetcher
 
 from src.models.camera import Camera, SourceReference
 from src.normalization.manufacturers import normalize_manufacturer
+from src.patterns.digital import is_digital_name
 from src.utils.data_io import save_records
 
 BASE_URL = "https://www.flickr.com/cameras/"
@@ -18,49 +19,6 @@ BASE_URL = "https://www.flickr.com/cameras/"
 # Filtering heuristics
 # --------------------------------------------------------------------------- #
 
-KNOWN_DIGITAL_PATTERNS: list[re.Pattern[str]] = [
-    re.compile(r"\bdigital\b", re.I),
-    re.compile(r"\bDSLR\b", re.I),
-    re.compile(r"\bmirrorless\b", re.I),
-    re.compile(r"\bEOS\s*\d+D\b", re.I),
-    re.compile(r"\bEOS\s*D\d", re.I),
-    re.compile(r"\bD-SLR\b", re.I),
-    re.compile(r"\bPowerShot\b", re.I),
-    re.compile(r"\bCoolPix\b", re.I),
-    re.compile(r"\bCOOLPIX\b"),
-    re.compile(r"\bCyber-shot\b", re.I),
-    re.compile(r"\bFinePix\s*[SZFJAV][VXZ]?\d", re.I),
-    re.compile(r"\bFinePix\s*(?:HS|T|XP|JV|JX|JZ|AX|AV)\d", re.I),
-    re.compile(r"\bFinePix\s*S\d{3,}", re.I),
-    re.compile(r"\bLumix\b", re.I),
-    re.compile(r"\bAlpha\s*(?:DSLR|NEX|SLT|ILCE)\b", re.I),
-    re.compile(r"\bNEX-", re.I),
-    re.compile(r"\bILCE-", re.I),
-    re.compile(r"\bSLT-", re.I),
-    re.compile(r"\bEOS\s*R\d", re.I),
-    re.compile(r"\bEOS\s*M\d", re.I),
-    re.compile(r"\bEOS\s*\d{3,}D\b", re.I),
-    re.compile(r"\bEOS\s*\d+D\s", re.I),
-    re.compile(r"\bD\d{1}\b(?!$)", re.I),  # Nikon D3, D5, etc. (but be careful)
-    re.compile(r"\bD\d{2,4}\b", re.I),  # Nikon D50, D200, D7000, etc.
-    re.compile(r"\bGoPro\b", re.I),
-    re.compile(r"\biPhone\b", re.I),
-    re.compile(r"\bPixel\b", re.I),
-    re.compile(r"\bGalaxy\b", re.I),
-    re.compile(r"\bDrone\b", re.I),
-    re.compile(r"\bAction\s*Cam", re.I),
-    re.compile(r"\bDSC-[A-Z]\d", re.I),  # Sony DSC digital compacts
-    re.compile(r"\bDMC-", re.I),  # Panasonic digital
-    re.compile(r"\bDC-", re.I),  # Panasonic digital
-    re.compile(r"\bE-[PM]\d", re.I),  # Olympus digital
-    re.compile(r"\bE-\d{3,}", re.I),  # Olympus E-300, E-500 etc.
-    re.compile(r"\bPEN\s*E-P", re.I),  # Olympus digital PEN
-    re.compile(r"\bOM-D\b", re.I),  # Olympus digital
-    re.compile(r"\bX-[TEASMHP]\d", re.I),  # Fujifilm X-series digital
-    re.compile(r"\bGFX\b", re.I),  # Fujifilm digital medium format
-    re.compile(r"\bGR\s*(?:III|IV|Digital)\b", re.I),  # Ricoh digital
-    re.compile(r"\bK-\d{1,2}\b", re.I),  # Pentax digital (K-1, K-3, K-70)
-]
 
 KNOWN_ANALOGUE_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"\bAE-1\b", re.I),
@@ -137,14 +95,6 @@ KNOWN_ANALOGUE_PATTERNS: list[re.Pattern[str]] = [
 ]
 
 
-def _is_digital(model_name: str) -> bool:
-    """Return True if the model name matches known digital camera patterns."""
-    for pat in KNOWN_DIGITAL_PATTERNS:
-        if pat.search(model_name):
-            return True
-    return False
-
-
 def _is_analogue(model_name: str) -> bool:
     """Return True if the model name matches known analogue camera patterns."""
     for pat in KNOWN_ANALOGUE_PATTERNS:
@@ -155,7 +105,7 @@ def _is_analogue(model_name: str) -> bool:
 
 def _classify(model_name: str) -> str:
     """Classify a camera model name: 'analogue', 'digital', or 'uncertain'."""
-    if _is_digital(model_name):
+    if is_digital_name(model_name):
         return "digital"
     if _is_analogue(model_name):
         return "analogue"
