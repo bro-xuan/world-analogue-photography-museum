@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CameraEntry } from "@/lib/cameras";
 
 interface CameraTileProps {
@@ -11,7 +12,7 @@ export default function CameraTile({ camera, hasDetail, browse }: CameraTileProp
     <>
       <div className="aspect-square bg-neutral-100 rounded overflow-hidden">
         <img
-          src={`/images/${camera.image}`}
+          src={camera.thumb ? `/images/${camera.thumb}` : `/images/${camera.image}`}
           alt={camera.name}
           loading="lazy"
           draggable={false}
@@ -26,13 +27,14 @@ export default function CameraTile({ camera, hasDetail, browse }: CameraTileProp
 
   if (hasDetail) {
     return (
-      <a
+      <Link
         href={`/cameras/${camera.id}`}
         className={`block camera-link${browse ? " hover:opacity-80 transition-opacity" : ""}`}
+        style={{ cursor: "pointer" }}
         draggable={false}
       >
         {content}
-      </a>
+      </Link>
     );
   }
 

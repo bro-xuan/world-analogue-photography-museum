@@ -1,20 +1,25 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { CameraEntry } from "@/lib/cameras";
 import CameraTile from "./CameraTile";
 
 const CELL = 150;
 const GAP = 20;
+const CELL_STEP = CELL + GAP;
+const ROW_HEIGHT = CELL + 20; // image + text
+const ROW_STEP = ROW_HEIGHT + GAP;
 const HERO_COLS = 3;
 const HERO_ROWS = 2;
 const DRAG_THRESHOLD = 5;
+const BUFFER = 3; // extra cells to render outside viewport
 
 interface FreeCanvasProps {
   cameras: CameraEntry[];
   total: number;
   manufacturers: number;
-  detailIds: Set<string>;
   onBrowse?: () => void;
 }
 
@@ -22,11 +27,9 @@ export default function FreeCanvas({
   cameras,
   total,
   manufacturers,
-  detailIds,
   onBrowse,
 }: FreeCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLDivElement>(null);
   const pos = useRef({ x: 0, y: 0 });
   const dragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
@@ -35,54 +38,109 @@ export default function FreeCanvas({
   const lastPointer = useRef({ x: 0, y: 0, t: 0 });
   const rafId = useRef(0);
   const dragDistance = useRef(0);
+  const router = useRouter();
 
   const [ready, setReady] = useState(false);
+  const [visibleRange, setVisibleRange] = useState({
+    colStart: 0,
+    colEnd: 0,
+    rowStart: 0,
+    rowEnd: 0,
+  });
 
   const totalNeeded = cameras.length + HERO_COLS * HERO_ROWS;
   const cols = Math.ceil(Math.sqrt(totalNeeded));
   const rows = Math.ceil(totalNeeded / cols);
-  const rowHeight = CELL + 20; // image + text
 
   // Hero placement in center of grid
   const heroColStart = Math.floor((cols - HERO_COLS) / 2) + 1;
   const heroRowStart = Math.floor((rows - HERO_ROWS) / 2) + 1;
 
-  // Build cell assignments, skipping hero area
-  const cells: { col: number; row: number; camera: CameraEntry }[] = [];
-  let ci = 0;
-  for (let r = 1; r <= rows; r++) {
-    for (let c = 1; c <= cols; c++) {
-      const inHero =
-        c >= heroColStart &&
-        c < heroColStart + HERO_COLS &&
-        r >= heroRowStart &&
-        r < heroRowStart + HERO_ROWS;
-      if (!inHero && ci < cameras.length) {
-        cells.push({ col: c, row: r, camera: cameras[ci] });
-        ci++;
+  // Total canvas dimensions
+  const canvasWidth = cols * CELL_STEP - GAP;
+  const canvasHeight = rows * ROW_STEP - GAP;
+
+  // Build cell lookup: "col,row" -> CameraEntry
+  const cellMap = useMemo(() => {
+    const map = new Map<string, CameraEntry>();
+    let ci = 0;
+    for (let r = 1; r <= rows; r++) {
+      for (let c = 1; c <= cols; c++) {
+        const inHero =
+          c >= heroColStart &&
+          c < heroColStart + HERO_COLS &&
+          r >= heroRowStart &&
+          r < heroRowStart + HERO_ROWS;
+        if (!inHero && ci < cameras.length) {
+          map.set(`${c},${r}`, cameras[ci]);
+          ci++;
+        }
       }
     }
-  }
+    return map;
+  }, [cameras, cols, rows, heroColStart, heroRowStart]);
+
+  // Compute visible range from current position
+  const computeVisibleRange = useCallback(() => {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const x = pos.current.x;
+    const y = pos.current.y;
+
+    return {
+      colStart: Math.max(1, Math.floor(-x / CELL_STEP) + 1 - BUFFER),
+      colEnd: Math.min(cols, Math.ceil((-x + vw) / CELL_STEP) + BUFFER),
+      rowStart: Math.max(1, Math.floor(-y / ROW_STEP) + 1 - BUFFER),
+      rowEnd: Math.min(rows, Math.ceil((-y + vh) / ROW_STEP) + BUFFER),
+    };
+  }, [cols, rows]);
+
+  // Update visible range if it changed
+  const lastRange = useRef({ colStart: 0, colEnd: 0, rowStart: 0, rowEnd: 0 });
+  const pendingUpdate = useRef(false);
+
+  const scheduleVisibleUpdate = useCallback(() => {
+    if (pendingUpdate.current) return;
+    pendingUpdate.current = true;
+    requestAnimationFrame(() => {
+      pendingUpdate.current = false;
+      const range = computeVisibleRange();
+      const prev = lastRange.current;
+      if (
+        range.colStart !== prev.colStart ||
+        range.colEnd !== prev.colEnd ||
+        range.rowStart !== prev.rowStart ||
+        range.rowEnd !== prev.rowEnd
+      ) {
+        lastRange.current = range;
+        setVisibleRange(range);
+      }
+    });
+  }, [computeVisibleRange]);
 
   // Center the hero on mount
   useEffect(() => {
-    const cellStep = CELL + GAP;
-    const rowStep = rowHeight + GAP;
-
     // Hero center in pixel coordinates
-    const heroCenterX = (heroColStart - 1) * cellStep + (HERO_COLS * cellStep - GAP) / 2;
-    const heroCenterY = (heroRowStart - 1) * rowStep + (HERO_ROWS * rowStep - GAP) / 2;
+    const heroCenterX =
+      (heroColStart - 1) * CELL_STEP + (HERO_COLS * CELL_STEP - GAP) / 2;
+    const heroCenterY =
+      (heroRowStart - 1) * ROW_STEP + (HERO_ROWS * ROW_STEP - GAP) / 2;
 
     pos.current = {
       x: -(heroCenterX - window.innerWidth / 2),
       y: -(heroCenterY - window.innerHeight / 2),
     };
 
-    if (canvasRef.current) {
-      canvasRef.current.style.transform = `translate(${pos.current.x}px, ${pos.current.y}px)`;
+    // Apply initial transform so canvas is centered on hero
+    if (containerRef.current) {
+      containerRef.current.style.transform = `translate(${pos.current.x}px, ${pos.current.y}px)`;
     }
+
+    const range = computeVisibleRange();
+    lastRange.current = range;
+    setVisibleRange(range);
     setReady(true);
-  }, [cols, rows, rowHeight]);
+  }, [cols, rows, heroColStart, heroRowStart, computeVisibleRange]);
 
   // Pointer & wheel event handlers
   useEffect(() => {
@@ -90,12 +148,13 @@ export default function FreeCanvas({
     if (!container) return;
 
     const applyTransform = () => {
-      if (canvasRef.current) {
-        canvasRef.current.style.transform = `translate(${pos.current.x}px, ${pos.current.y}px)`;
-      }
+      container.style.transform = `translate(${pos.current.x}px, ${pos.current.y}px)`;
+      scheduleVisibleUpdate();
     };
 
     const onPointerDown = (e: PointerEvent) => {
+      // Ignore if target is a button (let button clicks through)
+      if ((e.target as HTMLElement).closest("button")) return;
       dragging.current = true;
       dragDistance.current = 0;
       dragStart.current = { x: e.clientX, y: e.clientY };
@@ -134,7 +193,11 @@ export default function FreeCanvas({
         const el = document.elementFromPoint(e.clientX, e.clientY);
         const link = el?.closest("a.camera-link") as HTMLAnchorElement | null;
         if (link) {
-          window.location.href = link.href;
+          const href = link.getAttribute("href");
+          if (href) {
+            e.preventDefault();
+            router.push(href);
+          }
           return;
         }
         const btn = el?.closest("button") as HTMLButtonElement | null;
@@ -168,7 +231,7 @@ export default function FreeCanvas({
       applyTransform();
     };
 
-    // Prevent native image drag (fixes mouse cursor dragging photos instead of canvas)
+    // Prevent native image drag
     const onDragStart = (e: DragEvent) => {
       e.preventDefault();
     };
@@ -186,7 +249,7 @@ export default function FreeCanvas({
     container.addEventListener("pointerup", onPointerUp);
     container.addEventListener("pointercancel", onPointerUp);
     container.addEventListener("wheel", onWheel, { passive: false });
-    container.addEventListener("click", onClick, true); // capture phase
+    container.addEventListener("click", onClick, true);
     container.addEventListener("dragstart", onDragStart);
 
     return () => {
@@ -199,63 +262,111 @@ export default function FreeCanvas({
       container.removeEventListener("dragstart", onDragStart);
       cancelAnimationFrame(rafId.current);
     };
-  }, []);
+  }, [router, scheduleVisibleUpdate]);
+
+  // Build visible tiles
+  const visibleTiles: React.ReactNode[] = [];
+  for (let r = visibleRange.rowStart; r <= visibleRange.rowEnd; r++) {
+    for (let c = visibleRange.colStart; c <= visibleRange.colEnd; c++) {
+      const camera = cellMap.get(`${c},${r}`);
+      if (camera) {
+        const left = (c - 1) * CELL_STEP;
+        const top = (r - 1) * ROW_STEP;
+        visibleTiles.push(
+          <div
+            key={camera.id}
+            style={{
+              position: "absolute",
+              left,
+              top,
+              width: CELL,
+            }}
+          >
+            <CameraTile
+              camera={camera}
+              hasDetail={!!camera.hasDetail}
+            />
+          </div>
+        );
+      }
+    }
+  }
+
+  // Hero position
+  const heroLeft = (heroColStart - 1) * CELL_STEP;
+  const heroTop = (heroRowStart - 1) * ROW_STEP;
+  const heroWidth = HERO_COLS * CELL_STEP - GAP;
+  const heroHeight = HERO_ROWS * ROW_STEP - GAP;
+
+  // Check if hero is in visible range
+  const heroVisible =
+    heroColStart + HERO_COLS - 1 >= visibleRange.colStart &&
+    heroColStart <= visibleRange.colEnd &&
+    heroRowStart + HERO_ROWS - 1 >= visibleRange.rowStart &&
+    heroRowStart <= visibleRange.rowEnd;
 
   return (
     <div
-      ref={containerRef}
       className="fixed inset-0 overflow-hidden bg-white"
       style={{ cursor: "grab", touchAction: "none", userSelect: "none" }}
     >
       <div
-        ref={canvasRef}
+        ref={containerRef}
         className="absolute"
         style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(${cols}, ${CELL}px)`,
-          gridTemplateRows: `repeat(${rows}, ${rowHeight}px)`,
-          gap: `${GAP}px`,
+          width: canvasWidth,
+          height: canvasHeight,
           willChange: "transform",
           opacity: ready ? 1 : 0,
           transition: "opacity 0.3s",
+          cursor: "grab",
         }}
       >
-        {/* Hero — lives in the grid, moves with the canvas */}
-        <div
-          className="flex items-center justify-center bg-white"
-          style={{
-            gridColumn: `${heroColStart} / span ${HERO_COLS}`,
-            gridRow: `${heroRowStart} / span ${HERO_ROWS}`,
-          }}
-        >
-          <div className="text-center max-w-lg mx-4">
-            <h1 className="font-display text-4xl md:text-6xl font-bold text-neutral-900 leading-tight tracking-tight">
-              World Analogue
-              <br />
-              Photography Museum
-            </h1>
-            <p className="mt-4 text-sm md:text-base text-neutral-500">
-              {manufacturers.toLocaleString("en-US")} brands &middot;{" "}
-              {total.toLocaleString("en-US")} cameras
-            </p>
-            <button
-              onClick={(e) => { e.stopPropagation(); onBrowse?.(); }}
-              className="mt-6 px-5 py-2 text-sm font-medium text-neutral-900 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer"
-            >
-              Browse collection &darr;
-            </button>
-          </div>
-        </div>
-
-        {/* Camera tiles — explicitly placed to avoid hero area */}
-        {cells.map(({ col, row, camera }) => (
+        {/* Hero */}
+        {heroVisible && (
           <div
-            key={camera.id}
-            style={{ gridColumn: col, gridRow: row }}
+            className="flex items-center justify-center bg-white"
+            style={{
+              position: "absolute",
+              left: heroLeft,
+              top: heroTop,
+              width: heroWidth,
+              height: heroHeight,
+            }}
           >
-            <CameraTile camera={camera} hasDetail={detailIds.has(camera.id)} />
+            <div className="text-center max-w-lg mx-4">
+              <h1 className="font-display text-4xl md:text-6xl font-bold text-neutral-900 leading-tight tracking-tight">
+                World Analogue
+                <br />
+                Photography Museum
+              </h1>
+              <p className="mt-4 text-sm md:text-base text-neutral-500">
+                {manufacturers.toLocaleString("en-US")} brands &middot;{" "}
+                {total.toLocaleString("en-US")} cameras
+              </p>
+              <div className="mt-6 flex items-center gap-3 justify-center">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onBrowse?.();
+                  }}
+                  className="px-5 py-2 text-sm font-medium text-neutral-900 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer"
+                >
+                  Browse collection &darr;
+                </button>
+                <Link
+                  href="/brands"
+                  className="px-5 py-2 text-sm font-medium text-neutral-900 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors"
+                >
+                  Browse brands &rarr;
+                </Link>
+              </div>
+            </div>
           </div>
-        ))}
+        )}
+
+        {/* Visible camera tiles */}
+        {visibleTiles}
       </div>
     </div>
   );

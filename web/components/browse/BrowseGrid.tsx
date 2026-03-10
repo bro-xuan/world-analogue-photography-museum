@@ -1,14 +1,22 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { CameraEntry } from "@/lib/cameras";
 import CameraTile from "../CameraTile";
 
+const PAGE_SIZE = 100;
+
 interface BrowseGridProps {
   cameras: CameraEntry[];
-  detailIds: Set<string>;
 }
 
-export default function BrowseGrid({ cameras, detailIds }: BrowseGridProps) {
+export default function BrowseGrid({ cameras }: BrowseGridProps) {
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  const loadMore = useCallback(() => {
+    setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, cameras.length));
+  }, [cameras.length]);
+
   if (cameras.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -20,18 +28,33 @@ export default function BrowseGrid({ cameras, detailIds }: BrowseGridProps) {
     );
   }
 
+  const visible = cameras.slice(0, visibleCount);
+  const hasMore = visibleCount < cameras.length;
+
   return (
-    <div
-      className="grid gap-4 px-4 pb-8"
-      style={{
-        gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-      }}
-    >
-      {cameras.map((camera) => (
-        <div key={camera.id} style={{ contentVisibility: "auto", containIntrinsicSize: "0 180px" }}>
-          <CameraTile camera={camera} hasDetail={detailIds.has(camera.id)} browse />
+    <>
+      <div
+        className="grid gap-4 px-4 pb-4"
+        style={{
+          gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+        }}
+      >
+        {visible.map((camera) => (
+          <div key={camera.id}>
+            <CameraTile camera={camera} hasDetail={!!camera.hasDetail} browse />
+          </div>
+        ))}
+      </div>
+      {hasMore && (
+        <div className="flex justify-center pb-8">
+          <button
+            onClick={loadMore}
+            className="px-6 py-2 text-sm font-medium text-neutral-700 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors"
+          >
+            Load more ({cameras.length - visibleCount} remaining)
+          </button>
         </div>
-      ))}
-    </div>
+      )}
+    </>
   );
 }

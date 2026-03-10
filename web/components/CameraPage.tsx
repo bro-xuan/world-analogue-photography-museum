@@ -22,6 +22,23 @@ const RATING_LABELS: Record<string, string> = {
   historicalSignificance: "Historical Significance",
 };
 
+function RatingBar({ label, score }: { label: string; score: number }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-sm text-neutral-500 w-40 shrink-0">{label}</span>
+      <div className="flex-1 h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+        <div
+          className="h-full bg-neutral-800 rounded-full"
+          style={{ width: `${(score / 5) * 100}%` }}
+        />
+      </div>
+      <span className="text-sm font-medium text-neutral-700 w-8 text-right tabular-nums">
+        {score.toFixed(1)}
+      </span>
+    </div>
+  );
+}
+
 export default function CameraPage({ camera }: { camera: CameraDetail }) {
   const [activeImage, setActiveImage] = useState(0);
 
@@ -36,38 +53,45 @@ export default function CameraPage({ camera }: { camera: CameraDetail }) {
       : `${camera.year}`
     : null;
 
-  const subtitle = [
-    camera.manufacturer,
+  const metaParts = [
     camera.country,
     yearText,
     camera.specs?.format ? `${camera.specs.format} film` : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  ].filter(Boolean);
+
+  const hasSpecs = camera.specs && Object.keys(camera.specs).length > 0;
+  const hasPricing = camera.priceLaunch != null || camera.priceMarket != null;
+  const hasRatings = camera.ratings && Object.keys(camera.ratings).length > 0;
 
   return (
     <div className="min-h-screen bg-white">
       {/* Breadcrumb nav */}
       <nav className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-neutral-100">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center gap-2 text-sm">
+        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center gap-1.5 text-sm">
           <Link
             href="/"
             className="text-neutral-400 hover:text-neutral-900 transition-colors"
           >
             Museum
           </Link>
-          <span className="text-neutral-200">/</span>
-          <span className="text-neutral-400">{camera.manufacturer}</span>
-          <span className="text-neutral-200">/</span>
+          <span className="text-neutral-300">/</span>
+          <Link
+            href={`/brands/${camera.manufacturer.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`}
+            className="text-neutral-400 hover:text-neutral-900 transition-colors"
+          >
+            {camera.manufacturer}
+          </Link>
+          <span className="text-neutral-300">/</span>
           <span className="text-neutral-600 truncate">{camera.name}</span>
         </div>
       </nav>
 
-      <main className="max-w-5xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          {/* Image column */}
-          <div>
-            <div className="aspect-square bg-neutral-50 rounded-lg overflow-hidden flex items-center justify-center">
+      <main className="max-w-6xl mx-auto px-6 pt-10 pb-16">
+        {/* Mobile: 4 grid items reordered via order. Desktop: 2-col with left sticky. */}
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] lg:grid-cols-[5fr_6fr] gap-10 md:gap-14">
+          {/* Image + thumbnails — order 1 on mobile, left column on desktop */}
+          <div className="order-1 md:sticky md:top-20 md:self-start md:row-span-3">
+            <div className="aspect-square bg-neutral-50 rounded-xl overflow-hidden flex items-center justify-center">
               <img
                 src={`/images/${camera.images[activeImage]}`}
                 alt={camera.name}
@@ -82,10 +106,10 @@ export default function CameraPage({ camera }: { camera: CameraDetail }) {
                   <button
                     key={img}
                     onClick={() => setActiveImage(i)}
-                    className={`w-16 h-16 rounded overflow-hidden border-2 transition-colors cursor-pointer ${
+                    className={`w-14 h-14 rounded-lg overflow-hidden border-2 transition-colors cursor-pointer ${
                       i === activeImage
                         ? "border-neutral-900"
-                        : "border-neutral-200 hover:border-neutral-400"
+                        : "border-transparent hover:border-neutral-300"
                     }`}
                   >
                     <img
@@ -97,124 +121,161 @@ export default function CameraPage({ camera }: { camera: CameraDetail }) {
                 ))}
               </div>
             )}
+
+            {/* Pricing — under photo (desktop), reordered on mobile */}
+            {hasPricing && (
+              <div className="hidden md:block mt-6">
+                <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
+                  Pricing
+                </h2>
+                <div className="flex gap-3 flex-wrap">
+                  {camera.priceMarket != null && (
+                    <div className="px-4 py-2.5 bg-neutral-50 rounded-lg">
+                      <div className="text-[11px] text-neutral-400 uppercase tracking-wide">
+                        Market Value
+                      </div>
+                      <div className="text-lg font-semibold text-neutral-800 mt-0.5">
+                        ~${camera.priceMarket.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                      </div>
+                    </div>
+                  )}
+                  {camera.priceLaunch != null && (
+                    <div className="px-4 py-2.5 bg-neutral-50 rounded-lg">
+                      <div className="text-[11px] text-neutral-400 uppercase tracking-wide">
+                        Launch Price{camera.year ? ` (${camera.year})` : ""}
+                      </div>
+                      <div className="text-lg font-semibold text-neutral-800 mt-0.5">
+                        ${camera.priceLaunch.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                      </div>
+                      {camera.priceAdjusted != null && (
+                        <div className="text-xs text-neutral-400 mt-0.5">
+                          ≈ ${camera.priceAdjusted.toLocaleString("en-US")} today
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Info column */}
-          <div>
-            <h1 className="font-display text-3xl md:text-4xl font-bold text-neutral-900 leading-tight">
-              {camera.name}
-            </h1>
+          {/* Right column: name → description → specs — order 2 on mobile */}
+          <div className="order-2">
+            {/* Header */}
+            <div>
+              <div className="flex items-start gap-3 flex-wrap">
+                <h1 className="font-display text-3xl md:text-4xl font-bold text-neutral-900 leading-tight">
+                  {camera.name}
+                </h1>
+                {camera.cameraType && (
+                  <span className="mt-1.5 md:mt-2.5 inline-block px-2.5 py-0.5 text-xs font-medium text-neutral-500 bg-neutral-100 rounded-full whitespace-nowrap">
+                    {camera.cameraType}
+                  </span>
+                )}
+              </div>
 
-            {/* Camera type badge */}
-            {camera.cameraType && (
-              <span className="inline-block mt-2 px-3 py-1 text-xs font-medium text-neutral-500 bg-neutral-100 rounded-full">
-                {camera.cameraType}
-              </span>
-            )}
+              <p className="mt-2 text-sm text-neutral-400">
+                {camera.manufacturer}
+                {metaParts.length > 0 && <> &middot; {metaParts.join(" · ")}</>}
+              </p>
+            </div>
 
-            <p className={`${camera.cameraType ? "mt-2" : "mt-2"} text-sm text-neutral-400`}>
-              {subtitle}
-            </p>
-
+            {/* Description — scrollable, fixed height */}
             {camera.description && (
-              <div className="mt-6 text-base text-neutral-700 leading-relaxed space-y-3">
-                {camera.description.split("\n\n").map((para, i) => (
-                  <p key={i}>{para}</p>
-                ))}
+              <div className="mt-6">
+                <div className="max-h-60 overflow-y-auto pr-2 overscroll-contain">
+                  <div className="text-[15px] text-neutral-600 leading-relaxed space-y-4">
+                    {camera.description.split("\n\n").map((para, i) => (
+                      <p key={i}>{para}</p>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* Specs table */}
-            {camera.specs && Object.keys(camera.specs).length > 0 && (
+            {/* Specs */}
+            {hasSpecs && (
               <div className="mt-8">
                 <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
                   Specifications
                 </h2>
-                <table className="w-full text-sm">
-                  <tbody>
-                    {Object.entries(camera.specs).map(([key, value], i) => (
-                      <tr
-                        key={key}
-                        className={i % 2 === 0 ? "bg-neutral-50" : ""}
-                      >
-                        <td className="px-3 py-2 text-neutral-400 font-medium w-1/3">
-                          {SPEC_LABELS[key] || key}
-                        </td>
-                        <td className="px-3 py-2 text-neutral-700">
-                          {value}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="border border-neutral-100 rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <tbody>
+                      {Object.entries(camera.specs!).map(([key, value], i) => (
+                        <tr
+                          key={key}
+                          className={i % 2 === 0 ? "bg-neutral-50/50" : "bg-white"}
+                        >
+                          <td className="px-4 py-2.5 text-neutral-400 font-medium w-2/5">
+                            {SPEC_LABELS[key] || key}
+                          </td>
+                          <td className="px-4 py-2.5 text-neutral-700">
+                            {value}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 
-            {/* Pricing */}
-            {(camera.priceLaunch || camera.priceMarket) && (
-              <div className="mt-8">
-                <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
-                  Pricing
-                </h2>
-                <div className="grid grid-cols-2 gap-2">
-                  {camera.priceLaunch != null && (
-                    <div className="bg-neutral-50 rounded-lg px-3 py-2.5">
-                      <dt className="text-[11px] text-neutral-400 uppercase tracking-wide">
-                        Launch Price
-                      </dt>
-                      <dd className="text-sm text-neutral-700 mt-0.5">
-                        ${camera.priceLaunch.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                        {camera.year ? ` (${camera.year})` : ""}
-                      </dd>
-                      {camera.priceAdjusted != null && (
-                        <dd className="text-xs text-neutral-400 mt-1">
-                          ≈ ${camera.priceAdjusted.toLocaleString("en-US")} in 2024 dollars
-                        </dd>
-                      )}
-                    </div>
-                  )}
-                  {camera.priceMarket != null && (
-                    <div className="bg-neutral-50 rounded-lg px-3 py-2.5">
-                      <dt className="text-[11px] text-neutral-400 uppercase tracking-wide">
-                        Market Value
-                      </dt>
-                      <dd className="text-sm text-neutral-700 mt-0.5">
-                        ~${camera.priceMarket.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                      </dd>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            {/* Ratings */}
-            {camera.ratings && (
-              <div className="mt-8">
-                <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
-                  Editorial Ratings
-                </h2>
-                <div className="space-y-2.5">
-                  {Object.entries(camera.ratings).map(([key, score]) => (
-                    <div key={key}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm text-neutral-600">
-                          {RATING_LABELS[key] || key}
-                        </span>
-                        <span className="text-sm font-medium text-neutral-700">
-                          {score.toFixed(1)}
-                        </span>
-                      </div>
-                      <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-neutral-700 rounded-full transition-all"
-                          style={{ width: `${(score / 5) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
+
+          {/* Pricing — mobile only, order 3 (between specs and ratings) */}
+          {hasPricing && (
+            <div className="order-3 md:hidden">
+              <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
+                Pricing
+              </h2>
+              <div className="flex gap-3 flex-wrap">
+                {camera.priceMarket != null && (
+                  <div className="px-4 py-2.5 bg-neutral-50 rounded-lg">
+                    <div className="text-[11px] text-neutral-400 uppercase tracking-wide">
+                      Market Value
+                    </div>
+                    <div className="text-lg font-semibold text-neutral-800 mt-0.5">
+                      ~${camera.priceMarket.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </div>
+                  </div>
+                )}
+                {camera.priceLaunch != null && (
+                  <div className="px-4 py-2.5 bg-neutral-50 rounded-lg">
+                    <div className="text-[11px] text-neutral-400 uppercase tracking-wide">
+                      Launch Price{camera.year ? ` (${camera.year})` : ""}
+                    </div>
+                    <div className="text-lg font-semibold text-neutral-800 mt-0.5">
+                      ${camera.priceLaunch.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </div>
+                    {camera.priceAdjusted != null && (
+                      <div className="text-xs text-neutral-400 mt-0.5">
+                        ≈ ${camera.priceAdjusted.toLocaleString("en-US")} today
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Editorial Ratings — order 4 on mobile, right column on desktop */}
+          {hasRatings && (
+            <div className="order-4 md:col-start-2">
+              <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
+                Editorial Ratings
+              </h2>
+              <div className="space-y-3">
+                {Object.entries(camera.ratings!).map(([key, score]) => (
+                  <RatingBar
+                    key={key}
+                    label={RATING_LABELS[key] || key}
+                    score={score}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Related cameras */}

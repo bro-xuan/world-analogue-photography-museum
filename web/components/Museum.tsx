@@ -8,24 +8,33 @@ import FilterBar, {
   isFilterEmpty,
 } from "./browse/FilterBar";
 import BrowseGrid from "./browse/BrowseGrid";
-import { CameraEntry } from "@/lib/cameras";
-
-interface MuseumProps {
-  cameras: CameraEntry[];
-  total: number;
-  manufacturers: number;
-  detailIdList: string[];
-}
+import { CameraEntry, fetchLandingData } from "@/lib/cameras";
 
 type Mode = "canvas" | "entering-browse" | "browse" | "leaving-browse";
 
-export default function Museum({
-  cameras,
-  total,
-  manufacturers,
-  detailIdList,
-}: MuseumProps) {
-  const detailIds = useMemo(() => new Set(detailIdList), [detailIdList]);
+export default function Museum() {
+  const [cameras, setCameras] = useState<CameraEntry[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch landing data client-side
+  useEffect(() => {
+    fetchLandingData()
+      .then((data) => {
+        setCameras(data.cameras);
+        setTotal(data.meta.total);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load landing data:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  const manufacturers = useMemo(
+    () => new Set(cameras.map((c) => c.manufacturer)).size,
+    [cameras]
+  );
 
   const [mode, setMode] = useState<Mode>("canvas");
   const [filters, setFilters] = useState<FilterState>({
@@ -106,6 +115,14 @@ export default function Museum({
     }
   }, [mode]);
 
+  if (loading) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-white">
+        <div className="w-6 h-6 border-2 border-neutral-300 border-t-neutral-900 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   const showCanvas = mode === "canvas" || mode === "entering-browse" || mode === "leaving-browse";
   const showBrowse = mode === "browse" || mode === "entering-browse" || mode === "leaving-browse";
 
@@ -126,7 +143,6 @@ export default function Museum({
             cameras={cameras}
             total={total}
             manufacturers={manufacturers}
-            detailIds={detailIds}
             onBrowse={enterBrowse}
           />
         </div>
@@ -152,7 +168,7 @@ export default function Museum({
           />
           {/* Grid with top padding for filter bar */}
           <div className="pt-28 md:pt-24">
-            <BrowseGrid cameras={filteredCameras} detailIds={detailIds} />
+            <BrowseGrid cameras={filteredCameras} />
           </div>
         </div>
       )}

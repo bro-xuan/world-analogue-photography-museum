@@ -7,11 +7,19 @@ export interface CameraEntry {
   country?: string;
   tier: "xl" | "l" | "m";
   image: string;
+  thumb?: string;
+  hasDetail?: boolean;
 }
 
 export interface LandingData {
   meta: { total: number; generated_at: string };
   cameras: CameraEntry[];
+}
+
+/** Client-side fetch for landing data (used in browser) */
+export async function fetchLandingData(): Promise<LandingData> {
+  const res = await fetch("/data/landing.json");
+  return res.json();
 }
 
 export interface RelatedCamera {
@@ -43,34 +51,4 @@ export interface CameraDetail {
   priceAdjusted?: number;
   relatedCameras?: RelatedCamera[];
   ratings?: CameraRatings;
-}
-
-export async function loadLandingData(): Promise<LandingData> {
-  const fs = await import("fs/promises");
-  const path = await import("path");
-  const filePath = path.join(process.cwd(), "public", "data", "landing.json");
-  const raw = await fs.readFile(filePath, "utf-8");
-  return JSON.parse(raw);
-}
-
-export async function loadAllCameraDetails(): Promise<
-  Record<string, CameraDetail>
-> {
-  const fs = await import("fs/promises");
-  const path = await import("path");
-  const filePath = path.join(
-    process.cwd(),
-    "public",
-    "data",
-    "cameras_detail.json"
-  );
-  const raw = await fs.readFile(filePath, "utf-8");
-  return JSON.parse(raw);
-}
-
-export async function loadCameraDetail(
-  id: string
-): Promise<CameraDetail | null> {
-  const all = await loadAllCameraDetails();
-  return all[id] ?? null;
 }

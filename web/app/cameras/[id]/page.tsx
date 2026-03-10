@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { loadAllCameraDetails, loadCameraDetail } from "@/lib/cameras";
+import { loadAllCameraDetails, loadCameraDetail } from "@/lib/cameras.server";
 import CameraPage from "@/components/CameraPage";
 
 interface Props {
