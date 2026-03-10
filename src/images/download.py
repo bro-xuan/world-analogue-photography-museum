@@ -4,7 +4,8 @@ For cameras without images, searches multiple sources in waterfall order:
 1. Wikidata P18 property
 2. Wikimedia Commons search
 3. Flickr CC-licensed images (Scrapling scraper, no API key)
-4. Museum APIs (Smithsonian, Science Museum Group)
+4. DuckDuckGo image search / eBay listings
+5. Museum APIs (Smithsonian, Science Museum Group)
 """
 
 import asyncio
@@ -14,6 +15,7 @@ from pathlib import Path
 from urllib.parse import unquote
 
 from src.images.museum_search import search_museum_images
+from src.images.web_search import search_ebay_images
 from src.utils.data_io import IMAGES_DIR, MERGED_DIR
 from src.utils.http import RateLimitedClient
 
@@ -247,7 +249,7 @@ def _strip_undownloaded_urls(cameras: list[dict]) -> int:
     return stripped
 
 
-async def download_camera_images(max_per_camera: int = 3, search_missing: bool = True) -> dict:
+async def download_camera_images(max_per_camera: int = 8, search_missing: bool = True) -> dict:
     """Download images for all merged cameras.
 
     Phase 1: Download from existing URLs (fast, collectiblend/chinesecamera/etc.)
@@ -333,53 +335,15 @@ async def download_camera_images(max_per_camera: int = 3, search_missing: bool =
             # If no real images, try multiple search strategies (Phase 2)
             if not real_images and search_missing:
                 commons_url = None
-                # Try Wikidata P18 first (most reliable)
-                qid = camera.get("wikidata_qid")
-                if qid:
-                    commons_url = await _fetch_p18_image(client, qid)
-
-                # Try Wikipedia article image (for cameras with wikipedia source)
-                if not commons_url:
-                    for src in camera.get("sources", []):
-                        if src.get("source") == "wikipedia" and src.get("source_url"):
-                            wp_img = await _fetch_wikipedia_image(client, src["source_url"])
-                            if wp_img:
-                                commons_url = wp_img
-                            break
-
-                # Commons search with multiple query variants
-                if not commons_url:
-                    search_queries = [f"{mfr} {name}" if mfr else name]
-                    # Try just the camera name without manufacturer prefix
-                    if mfr and name.startswith(mfr):
-                        bare_name = name[len(mfr):].strip()
-                        if bare_name:
-                            search_queries.append(f"{mfr} {bare_name}")
-                    # For Chinese cameras, try Chinese characters from sources
-                    country = camera.get("manufacturer_country", "")
-                    if country == "China":
-                        for src in camera.get("sources", []):
-                            if src.get("source") == "chinesecamera" and src.get("source_id"):
-                                search_queries.append(src["source_id"])
-                                break
-
-                    for sq in search_queries:
-                        commons_url = await _search_commons_image(client, sq, camera_name=name)
-                        if commons_url:
-                            break
                 stats["searched"] += 1
 
-                # Try Flickr CC search (synchronous, uses Scrapling)
+                # Try eBay
                 if not commons_url:
-                    try:
-                        from src.images.flickr_search import search_flickr_images
-                        flickr_results = search_flickr_images(name, mfr, max_results=max_per_camera)
-                        if flickr_results:
-                            commons_url = flickr_results[0]["url"]
-                            camera.setdefault("images", []).extend(flickr_results)
-                            real_images = flickr_results
-                    except ImportError:
-                        pass  # scrapling/patchright not installed, skip Flickr
+                    ebay_results = await search_ebay_images(name, mfr, client, max_results=max_per_camera)
+                    if ebay_results:
+                        commons_url = ebay_results[0]["url"]
+                        camera.setdefault("images", []).extend(ebay_results)
+                        real_images = ebay_results
 
                 # Try Museum APIs
                 if not commons_url:
@@ -398,12 +362,10 @@ async def download_camera_images(max_per_camera: int = 3, search_missing: bool =
                         "license": "CC",
                     })
 
-                if not real_images:
+                if real_images:
+                    print(f"  + {mfr} {name}: {len(real_images)} images found", flush=True)
+                else:
                     stats["skipped"] += 1
-                    total_searched = stats["searched"] + stats["skipped"]
-                    if total_searched % 10 == 0:
-                        print(f"  Searched {total_searched}: "
-                              f"found={stats['downloaded']}, not_found={stats['skipped']}", flush=True)
                     continue
 
             # Download images into per-camera folder
@@ -455,10 +417,11 @@ async def download_camera_images(max_per_camera: int = 3, search_missing: bool =
                 else:
                     stats["failed"] += 1
 
-            if (i + 1) % 100 == 0:
+            if (i + 1) % 10 == 0:
                 print(f"  [{i+1}/{len(cameras)}] Progress: {stats['downloaded']} downloaded, "
                       f"{stats['searched']} searched, {stats['failed']} failed, "
                       f"{stats['already_local']} already local", flush=True)
+            if (i + 1) % 50 == 0:
                 # Periodic save to avoid losing progress
                 cameras_path.write_text(json.dumps(cameras, indent=2, ensure_ascii=False))
 

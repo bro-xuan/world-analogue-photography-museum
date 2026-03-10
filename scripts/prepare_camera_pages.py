@@ -148,6 +148,8 @@ def main():
             specs["weight"] = f"{cam['weight_g']}g"
         if cam.get("dimensions"):
             specs["dimensions"] = cam["dimensions"]
+        if cam.get("battery"):
+            specs["battery"] = cam["battery"]
 
         entry: dict = {
             "name": _display_name(cam),
@@ -168,6 +170,11 @@ def main():
         ct = _normalize_camera_type(cam.get("camera_type"))
         if ct:
             entry["cameraType"] = ct
+
+        # Ratings (pre-generated editorial scores)
+        ratings = cam.get("ratings")
+        if ratings:
+            entry["ratings"] = ratings
 
         # Inflation-adjusted price
         pa = cam.get("price_adjusted_usd")
@@ -195,12 +202,14 @@ def main():
     n_type = sum(1 for e in detail_map.values() if "cameraType" in e)
     n_adj = sum(1 for e in detail_map.values() if "priceAdjusted" in e)
     n_rel = sum(1 for e in detail_map.values() if "relatedCameras" in e)
+    n_rat = sum(1 for e in detail_map.values() if "ratings" in e)
 
     print(f"\nWrote {out_path}")
     print(f"  Cameras with detail pages: {len(detail_map)}")
     print(f"  With cameraType: {n_type}")
     print(f"  With priceAdjusted: {n_adj}")
     print(f"  With relatedCameras: {n_rel}")
+    print(f"  With ratings: {n_rat}")
     print(f"  Skipped (no description): {skipped_no_desc}")
     print(f"  Skipped (no image): {skipped_no_img}")
 

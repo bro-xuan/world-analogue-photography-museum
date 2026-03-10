@@ -21,6 +21,13 @@ export interface RelatedCamera {
   year?: number;
 }
 
+export interface CameraRatings {
+  buildQuality: number;
+  value: number;
+  collectibility: number;
+  historicalSignificance: number;
+}
+
 export interface CameraDetail {
   name: string;
   manufacturer: string;
@@ -35,6 +42,7 @@ export interface CameraDetail {
   cameraType?: string;
   priceAdjusted?: number;
   relatedCameras?: RelatedCamera[];
+  ratings?: CameraRatings;
 }
 
 export async function loadLandingData(): Promise<LandingData> {

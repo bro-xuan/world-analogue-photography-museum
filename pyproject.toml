@@ -11,6 +11,10 @@ dependencies = [
     "lxml>=5.0",
     "thefuzz[speedup]>=0.22",
     "scrapling>=0.2",
+    "openai>=2.26.0",
+    "replicate>=1.0.7",
+    "google-genai>=1.66.0",
+    "duckduckgo-search>=8.1.1",
 ]
 
 [project.optional-dependencies]
@@ -25,6 +29,7 @@ processing = [
     "rembg[cpu]",
     "opencv-python",
     "easyocr>=1.7",
+    "simple-lama-inpainting",
 ]
 
 [project.scripts]

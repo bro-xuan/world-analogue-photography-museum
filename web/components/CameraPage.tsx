@@ -12,6 +12,14 @@ const SPEC_LABELS: Record<string, string> = {
   metering: "Metering",
   weight: "Weight",
   dimensions: "Dimensions",
+  battery: "Battery",
+};
+
+const RATING_LABELS: Record<string, string> = {
+  buildQuality: "Build Quality",
+  value: "Value",
+  collectibility: "Collectibility",
+  historicalSignificance: "Historical Significance",
 };
 
 export default function CameraPage({ camera }: { camera: CameraDetail }) {
@@ -109,32 +117,36 @@ export default function CameraPage({ camera }: { camera: CameraDetail }) {
             </p>
 
             {camera.description && (
-              <p className="mt-6 text-base text-neutral-700 leading-relaxed">
-                {camera.description}
-              </p>
+              <div className="mt-6 text-base text-neutral-700 leading-relaxed space-y-3">
+                {camera.description.split("\n\n").map((para, i) => (
+                  <p key={i}>{para}</p>
+                ))}
+              </div>
             )}
 
-            {/* Specs cards */}
+            {/* Specs table */}
             {camera.specs && Object.keys(camera.specs).length > 0 && (
               <div className="mt-8">
                 <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
                   Specifications
                 </h2>
-                <div className="grid grid-cols-2 gap-2">
-                  {Object.entries(camera.specs).map(([key, value]) => (
-                    <div
-                      key={key}
-                      className="bg-neutral-50 rounded-lg px-3 py-2.5"
-                    >
-                      <dt className="text-[11px] text-neutral-400 uppercase tracking-wide">
-                        {SPEC_LABELS[key] || key}
-                      </dt>
-                      <dd className="text-sm text-neutral-700 mt-0.5">
-                        {value}
-                      </dd>
-                    </div>
-                  ))}
-                </div>
+                <table className="w-full text-sm">
+                  <tbody>
+                    {Object.entries(camera.specs).map(([key, value], i) => (
+                      <tr
+                        key={key}
+                        className={i % 2 === 0 ? "bg-neutral-50" : ""}
+                      >
+                        <td className="px-3 py-2 text-neutral-400 font-medium w-1/3">
+                          {SPEC_LABELS[key] || key}
+                        </td>
+                        <td className="px-3 py-2 text-neutral-700">
+                          {value}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
 
@@ -171,6 +183,34 @@ export default function CameraPage({ camera }: { camera: CameraDetail }) {
                       </dd>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+            {/* Ratings */}
+            {camera.ratings && (
+              <div className="mt-8">
+                <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
+                  Editorial Ratings
+                </h2>
+                <div className="space-y-2.5">
+                  {Object.entries(camera.ratings).map(([key, score]) => (
+                    <div key={key}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm text-neutral-600">
+                          {RATING_LABELS[key] || key}
+                        </span>
+                        <span className="text-sm font-medium text-neutral-700">
+                          {score.toFixed(1)}
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-neutral-700 rounded-full transition-all"
+                          style={{ width: `${(score / 5) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

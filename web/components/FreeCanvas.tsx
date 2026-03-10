@@ -129,12 +129,18 @@ export default function FreeCanvas({
       container.releasePointerCapture(e.pointerId);
       container.style.cursor = "grab";
 
-      // Tap (not drag) — navigate to camera detail if link exists
+      // Tap (not drag) — activate the element under the pointer
       if (dragDistance.current <= DRAG_THRESHOLD) {
         const el = document.elementFromPoint(e.clientX, e.clientY);
         const link = el?.closest("a.camera-link") as HTMLAnchorElement | null;
         if (link) {
           window.location.href = link.href;
+          return;
+        }
+        const btn = el?.closest("button") as HTMLButtonElement | null;
+        if (btn) {
+          btn.click();
+          return;
         }
         return;
       }
