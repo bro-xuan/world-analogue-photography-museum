@@ -3,9 +3,10 @@ import { CameraEntry } from "@/lib/cameras";
 interface CameraTileProps {
   camera: CameraEntry;
   hasDetail: boolean;
+  browse?: boolean;
 }
 
-export default function CameraTile({ camera, hasDetail }: CameraTileProps) {
+export default function CameraTile({ camera, hasDetail, browse }: CameraTileProps) {
   const content = (
     <>
       <div className="aspect-square bg-neutral-100 rounded overflow-hidden">
@@ -17,7 +18,7 @@ export default function CameraTile({ camera, hasDetail }: CameraTileProps) {
           className="w-full h-full object-contain select-none"
         />
       </div>
-      <p className="text-[10px] text-neutral-400 mt-1 leading-tight truncate">
+      <p className="text-[10px] text-neutral-400 mt-1 leading-tight truncate text-center">
         {camera.name}
       </p>
     </>
@@ -27,7 +28,7 @@ export default function CameraTile({ camera, hasDetail }: CameraTileProps) {
     return (
       <a
         href={`/cameras/${camera.id}`}
-        className="block camera-link"
+        className={`block camera-link${browse ? " hover:opacity-80 transition-opacity" : ""}`}
         draggable={false}
       >
         {content}

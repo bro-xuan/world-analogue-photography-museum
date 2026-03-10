@@ -6,8 +6,8 @@ import CameraTile from "./CameraTile";
 
 const CELL = 150;
 const GAP = 20;
-const HERO_COLS = 4;
-const HERO_ROWS = 3;
+const HERO_COLS = 3;
+const HERO_ROWS = 2;
 const DRAG_THRESHOLD = 5;
 
 interface FreeCanvasProps {
@@ -15,6 +15,7 @@ interface FreeCanvasProps {
   total: number;
   manufacturers: number;
   detailIds: Set<string>;
+  onBrowse?: () => void;
 }
 
 export default function FreeCanvas({
@@ -22,6 +23,7 @@ export default function FreeCanvas({
   total,
   manufacturers,
   detailIds,
+  onBrowse,
 }: FreeCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -36,8 +38,9 @@ export default function FreeCanvas({
 
   const [ready, setReady] = useState(false);
 
-  const cols = Math.ceil(Math.sqrt(cameras.length));
-  const rows = Math.ceil(cameras.length / cols);
+  const totalNeeded = cameras.length + HERO_COLS * HERO_ROWS;
+  const cols = Math.ceil(Math.sqrt(totalNeeded));
+  const rows = Math.ceil(totalNeeded / cols);
   const rowHeight = CELL + 20; // image + text
 
   // Hero placement in center of grid
@@ -61,14 +64,18 @@ export default function FreeCanvas({
     }
   }
 
-  // Center the grid on mount
+  // Center the hero on mount
   useEffect(() => {
-    const gridWidth = cols * (CELL + GAP);
-    const gridHeight = rows * (rowHeight + GAP);
+    const cellStep = CELL + GAP;
+    const rowStep = rowHeight + GAP;
+
+    // Hero center in pixel coordinates
+    const heroCenterX = (heroColStart - 1) * cellStep + (HERO_COLS * cellStep - GAP) / 2;
+    const heroCenterY = (heroRowStart - 1) * rowStep + (HERO_ROWS * rowStep - GAP) / 2;
 
     pos.current = {
-      x: -(gridWidth / 2 - window.innerWidth / 2),
-      y: -(gridHeight / 2 - window.innerHeight / 2),
+      x: -(heroCenterX - window.innerWidth / 2),
+      y: -(heroCenterY - window.innerHeight / 2),
     };
 
     if (canvasRef.current) {
@@ -222,10 +229,13 @@ export default function FreeCanvas({
               Photography Museum
             </h1>
             <p className="mt-4 text-sm md:text-base text-neutral-500">
-              {manufacturers.toLocaleString()} brands &middot;{" "}
-              {total.toLocaleString()} cameras
+              {manufacturers.toLocaleString("en-US")} brands &middot;{" "}
+              {total.toLocaleString("en-US")} cameras
             </p>
-            <button className="mt-6 px-5 py-2 text-sm font-medium text-neutral-900 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer">
+            <button
+              onClick={(e) => { e.stopPropagation(); onBrowse?.(); }}
+              className="mt-6 px-5 py-2 text-sm font-medium text-neutral-900 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer"
+            >
               Browse collection &darr;
             </button>
           </div>

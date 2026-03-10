@@ -4,6 +4,7 @@ export interface CameraEntry {
   manufacturer: string;
   year: number | null;
   format: string | null;
+  country?: string;
   tier: "xl" | "l" | "m";
   image: string;
 }

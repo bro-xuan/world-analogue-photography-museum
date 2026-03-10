@@ -188,8 +188,8 @@ def _image_path(local_path: str) -> str:
     return local_path
 
 
-HERO_COLS = 4
-HERO_ROWS = 3
+HERO_COLS = 3
+HERO_ROWS = 2
 
 
 def _compute_grid(n: int) -> tuple[int, int, list[int], list[tuple[int, int]]]:
@@ -201,8 +201,10 @@ def _compute_grid(n: int) -> tuple[int, int, list[int], list[tuple[int, int]]]:
     Only the first n non-hero cells are "active" (matching FreeCanvas.tsx's
     cameras[ci] assignment which stops at ci < cameras.length).
     """
-    cols = math.ceil(math.sqrt(n))
-    rows = math.ceil(n / cols)
+    # Need enough cells for n cameras PLUS the hero area
+    total_needed = n + HERO_COLS * HERO_ROWS
+    cols = math.ceil(math.sqrt(total_needed))
+    rows = math.ceil(total_needed / cols)
 
     hero_col_start = (cols - HERO_COLS) // 2 + 1
     hero_row_start = (rows - HERO_ROWS) // 2 + 1
@@ -362,6 +364,8 @@ def main():
             entry["year"] = cam["year_introduced"]
         if cam.get("film_format"):
             entry["format"] = cam["film_format"]
+        if cam.get("manufacturer_country"):
+            entry["country"] = cam["manufacturer_country"]
         entry["tier"] = tier
         entry["image"] = _image_path(local_path)
 
