@@ -307,7 +307,7 @@ export default function FreeCanvas({
 
   return (
     <div
-      className="fixed inset-0 overflow-hidden bg-white"
+      className="absolute inset-0 overflow-hidden bg-white"
       style={{ cursor: "grab", touchAction: "none", userSelect: "none" }}
     >
       <div

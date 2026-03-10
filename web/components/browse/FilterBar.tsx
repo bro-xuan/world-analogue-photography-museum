@@ -132,7 +132,7 @@ export default function FilterBar({
   const hasFilters = !isFilterEmpty(filters);
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-neutral-200 shadow-sm">
+    <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-neutral-200 shadow-sm">
       {/* Top row: close, search, count, clear */}
       <div className="flex items-center gap-3 px-4 py-3 max-w-screen-2xl mx-auto">
         <button

@@ -12,6 +12,8 @@ import { CameraEntry, fetchLandingData } from "@/lib/cameras";
 
 type Mode = "canvas" | "entering-browse" | "browse" | "leaving-browse";
 
+const TRANSITION_MS = 600;
+
 export default function Museum() {
   const [cameras, setCameras] = useState<CameraEntry[]>([]);
   const [total, setTotal] = useState(0);
@@ -96,8 +98,7 @@ export default function Museum() {
 
   const enterBrowse = useCallback(() => {
     setMode("entering-browse");
-    // After CSS transition, switch to full browse
-    setTimeout(() => setMode("browse"), 300);
+    setTimeout(() => setMode("browse"), TRANSITION_MS);
   }, []);
 
   const leaveBrowse = useCallback(() => {
@@ -105,15 +106,8 @@ export default function Museum() {
     setTimeout(() => {
       setMode("canvas");
       setFilters({ ...EMPTY_FILTER, formats: new Set() });
-    }, 300);
+    }, TRANSITION_MS);
   }, []);
-
-  // Scroll to top when entering browse mode
-  useEffect(() => {
-    if (mode === "browse") {
-      window.scrollTo(0, 0);
-    }
-  }, [mode]);
 
   if (loading) {
     return (
@@ -126,18 +120,29 @@ export default function Museum() {
   const showCanvas = mode === "canvas" || mode === "entering-browse" || mode === "leaving-browse";
   const showBrowse = mode === "browse" || mode === "entering-browse" || mode === "leaving-browse";
 
-  // Canvas fades out via opacity on its own fixed container — no transform
-  // wrapper needed (transform on a parent breaks position:fixed children).
-  const canvasOpacity =
-    mode === "entering-browse" ? 0 : mode === "leaving-browse" ? 1 : 1;
+  const animDuration = `${TRANSITION_MS}ms`;
+
+  const canvasStyle: React.CSSProperties =
+    mode === "entering-browse"
+      ? { animation: `slide-up-out ${animDuration} ease-in-out forwards`, pointerEvents: "none" }
+      : mode === "leaving-browse"
+        ? { animation: `slide-down-in ${animDuration} ease-in-out forwards`, pointerEvents: "none" }
+        : {};
+
+  const browseStyle: React.CSSProperties =
+    mode === "entering-browse"
+      ? { animation: `slide-up-in ${animDuration} ease-in-out forwards`, pointerEvents: "none" }
+      : mode === "leaving-browse"
+        ? { animation: `slide-down-out ${animDuration} ease-in-out forwards`, pointerEvents: "none" }
+        : {};
 
   return (
     <>
-      {/* Canvas mode — rendered without a wrapper so fixed positioning works */}
+      {/* Canvas mode */}
       {showCanvas && (
         <div
-          className="fixed inset-0 z-30 transition-opacity duration-300 ease-in-out pointer-events-auto"
-          style={{ opacity: canvasOpacity }}
+          className="fixed inset-0 z-30"
+          style={canvasStyle}
         >
           <FreeCanvas
             cameras={cameras}
@@ -151,10 +156,8 @@ export default function Museum() {
       {/* Browse mode */}
       {showBrowse && (
         <div
-          className="fixed inset-0 bg-white z-40 overflow-y-auto transition-opacity duration-300 ease-in-out"
-          style={{
-            opacity: mode === "browse" ? 1 : 0,
-          }}
+          className="fixed inset-0 bg-white z-40 overflow-y-auto"
+          style={browseStyle}
         >
           <FilterBar
             filters={filters}
