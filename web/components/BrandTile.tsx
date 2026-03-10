@@ -20,9 +20,19 @@ export default function BrandTile({ brand }: BrandTileProps) {
         />
       </div>
       <div className="mt-2">
-        <p className="text-sm font-medium text-neutral-800 truncate group-hover:text-neutral-600 transition-colors font-display">
-          {brand.name}
-        </p>
+        {brand.logo ? (
+          <div className="h-5 flex items-center">
+            <img
+              src={`/${brand.logo}`}
+              alt={brand.name}
+              className="max-h-full max-w-full object-contain brightness-0"
+            />
+          </div>
+        ) : (
+          <p className="text-sm font-medium text-neutral-800 truncate group-hover:text-neutral-600 transition-colors font-display">
+            {brand.name}
+          </p>
+        )}
         <p className="text-xs text-neutral-400 mt-0.5">
           {brand.cameraCount} camera{brand.cameraCount !== 1 ? "s" : ""}
           {brand.country && <> &middot; {brand.country}</>}

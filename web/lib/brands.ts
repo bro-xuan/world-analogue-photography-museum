@@ -18,6 +18,7 @@ export interface BrandEntry {
   region: string;
   cameraCount: number;
   heroImage: string;
+  logo?: string;
   yearStart?: number;
   yearEnd?: number;
   cameras: BrandCamera[];

@@ -204,6 +204,10 @@ def main():
         slug = _brand_slug(mfr)
         region = _get_region(info["country"])
 
+        # Check for logo
+        logo_path = Path(f"web/public/logos/{slug}.png")
+        logo = f"logos/{slug}.png" if logo_path.exists() else None
+
         brand_entry = {
             "slug": slug,
             "name": mfr,
@@ -213,6 +217,8 @@ def main():
             "heroImage": info["hero_image"],
             "cameras": cams,
         }
+        if logo:
+            brand_entry["logo"] = logo
         if years:
             brand_entry["yearStart"] = min(years)
             brand_entry["yearEnd"] = max(years)

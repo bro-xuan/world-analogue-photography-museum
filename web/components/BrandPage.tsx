@@ -53,30 +53,26 @@ export default function BrandPage({ brand }: { brand: BrandEntry }) {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Breadcrumb */}
-      <nav className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-neutral-100">
-        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center gap-1.5 text-sm">
-          <Link
-            href="/"
-            className="text-neutral-400 hover:text-neutral-900 transition-colors"
-          >
-            Museum
-          </Link>
-          <span className="text-neutral-300">/</span>
-          <Link
-            href="/brands"
-            className="text-neutral-400 hover:text-neutral-900 transition-colors"
-          >
+      <main className="max-w-6xl mx-auto px-6 pt-8 pb-16">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-1.5 text-sm mb-6">
+          <Link href="/brands" className="text-neutral-400 hover:text-neutral-900 transition-colors">
             Brands
           </Link>
           <span className="text-neutral-300">/</span>
           <span className="text-neutral-600 truncate">{brand.name}</span>
         </div>
-      </nav>
-
-      <main className="max-w-6xl mx-auto px-6 pt-10 pb-16">
         {/* Brand header */}
         <div>
+          {brand.logo && (
+            <div className="h-8 mb-3">
+              <img
+                src={`/${brand.logo}`}
+                alt=""
+                className="max-h-full max-w-[200px] object-contain brightness-0"
+              />
+            </div>
+          )}
           <h1 className="font-display text-3xl md:text-4xl font-bold text-neutral-900">
             {brand.name}
           </h1>
