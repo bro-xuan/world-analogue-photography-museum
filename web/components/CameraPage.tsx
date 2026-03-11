@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { CameraDetail } from "@/lib/cameras";
 import RelatedCameras from "@/components/camera/RelatedCameras";
+import CollectionButtons from "@/components/camera/CollectionButtons";
 
 const SPEC_LABELS: Record<string, string> = {
   format: "Film Format",
@@ -13,6 +14,14 @@ const SPEC_LABELS: Record<string, string> = {
   weight: "Weight",
   dimensions: "Dimensions",
   battery: "Battery",
+};
+
+const PRICE_SOURCE_LABELS: Record<string, string> = {
+  curated: "verified",
+  llm: "est.",
+  chinesecamera: "verified",
+  ebay: "via eBay",
+  collectiblend: "via Collectiblend",
 };
 
 const RATING_LABELS: Record<string, string> = {
@@ -39,8 +48,16 @@ function RatingBar({ label, score }: { label: string; score: number }) {
   );
 }
 
-export default function CameraPage({ camera }: { camera: CameraDetail }) {
+export default function CameraPage({ camera, cameraId }: { camera: CameraDetail; cameraId: string }) {
   const [activeImage, setActiveImage] = useState(0);
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+  const validImages = camera.images.filter(img => !failedImages.has(img));
+  const safeActive = Math.min(activeImage, Math.max(0, validImages.length - 1));
+
+  const handleImageError = (img: string) => {
+    setFailedImages(prev => new Set(prev).add(img));
+  };
 
   const yearDuration =
     camera.year && camera.yearEnd
@@ -65,16 +82,9 @@ export default function CameraPage({ camera }: { camera: CameraDetail }) {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Breadcrumb nav */}
-      <nav className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b border-neutral-100">
-        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center gap-1.5 text-sm">
-          <Link
-            href="/"
-            className="text-neutral-400 hover:text-neutral-900 transition-colors"
-          >
-            Museum
-          </Link>
-          <span className="text-neutral-300">/</span>
+      <main className="max-w-6xl mx-auto px-6 pt-8 pb-16">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-1.5 text-sm mb-6">
           <Link
             href={`/brands/${camera.manufacturer.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`}
             className="text-neutral-400 hover:text-neutral-900 transition-colors"
@@ -84,30 +94,32 @@ export default function CameraPage({ camera }: { camera: CameraDetail }) {
           <span className="text-neutral-300">/</span>
           <span className="text-neutral-600 truncate">{camera.name}</span>
         </div>
-      </nav>
-
-      <main className="max-w-6xl mx-auto px-6 pt-10 pb-16">
         {/* Mobile: 4 grid items reordered via order. Desktop: 2-col with left sticky. */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] lg:grid-cols-[5fr_6fr] gap-10 md:gap-14">
           {/* Image + thumbnails — order 1 on mobile, left column on desktop */}
           <div className="order-1 md:sticky md:top-20 md:self-start md:row-span-3">
             <div className="aspect-square bg-neutral-50 rounded-xl overflow-hidden flex items-center justify-center">
-              <img
-                src={`/images/${camera.images[activeImage]}`}
-                alt={camera.name}
-                className="max-w-full max-h-full object-contain"
-              />
+              {validImages.length > 0 ? (
+                <img
+                  src={`/images/${validImages[safeActive]}`}
+                  alt={camera.name}
+                  className="max-w-full max-h-full object-contain"
+                  onError={() => handleImageError(validImages[safeActive])}
+                />
+              ) : (
+                <div className="text-neutral-300 text-sm">No image available</div>
+              )}
             </div>
 
             {/* Thumbnail strip */}
-            {camera.images.length > 1 && (
+            {validImages.length > 1 && (
               <div className="flex gap-2 mt-3">
-                {camera.images.map((img, i) => (
+                {validImages.map((img, i) => (
                   <button
                     key={img}
                     onClick={() => setActiveImage(i)}
                     className={`w-14 h-14 rounded-lg overflow-hidden border-2 transition-colors cursor-pointer ${
-                      i === activeImage
+                      i === safeActive
                         ? "border-neutral-900"
                         : "border-transparent hover:border-neutral-300"
                     }`}
@@ -116,6 +128,7 @@ export default function CameraPage({ camera }: { camera: CameraDetail }) {
                       src={`/images/${img}`}
                       alt=""
                       className="w-full h-full object-contain bg-neutral-50"
+                      onError={() => handleImageError(img)}
                     />
                   </button>
                 ))}
@@ -137,6 +150,11 @@ export default function CameraPage({ camera }: { camera: CameraDetail }) {
                       <div className="text-lg font-semibold text-neutral-800 mt-0.5">
                         ~${camera.priceMarket.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </div>
+                      {camera.priceMarketSource && (
+                        <div className="text-[10px] text-neutral-400 mt-0.5">
+                          {PRICE_SOURCE_LABELS[camera.priceMarketSource] || camera.priceMarketSource}
+                        </div>
+                      )}
                     </div>
                   )}
                   {camera.priceLaunch != null && (
@@ -150,6 +168,11 @@ export default function CameraPage({ camera }: { camera: CameraDetail }) {
                       {camera.priceAdjusted != null && (
                         <div className="text-xs text-neutral-400 mt-0.5">
                           ≈ ${camera.priceAdjusted.toLocaleString("en-US")} today
+                        </div>
+                      )}
+                      {camera.priceLaunchSource && (
+                        <div className="text-[10px] text-neutral-400 mt-0.5">
+                          {PRICE_SOURCE_LABELS[camera.priceLaunchSource] || camera.priceLaunchSource}
                         </div>
                       )}
                     </div>
@@ -179,6 +202,8 @@ export default function CameraPage({ camera }: { camera: CameraDetail }) {
                 {metaParts.length > 0 && <> &middot; {metaParts.join(" · ")}</>}
               </p>
             </div>
+
+            <CollectionButtons cameraId={cameraId} />
 
             {/* Description — scrollable, fixed height */}
             {camera.description && (
@@ -238,6 +263,11 @@ export default function CameraPage({ camera }: { camera: CameraDetail }) {
                     <div className="text-lg font-semibold text-neutral-800 mt-0.5">
                       ~${camera.priceMarket.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </div>
+                    {camera.priceMarketSource && (
+                      <div className="text-[10px] text-neutral-400 mt-0.5">
+                        {PRICE_SOURCE_LABELS[camera.priceMarketSource] || camera.priceMarketSource}
+                      </div>
+                    )}
                   </div>
                 )}
                 {camera.priceLaunch != null && (
@@ -251,6 +281,11 @@ export default function CameraPage({ camera }: { camera: CameraDetail }) {
                     {camera.priceAdjusted != null && (
                       <div className="text-xs text-neutral-400 mt-0.5">
                         ≈ ${camera.priceAdjusted.toLocaleString("en-US")} today
+                      </div>
+                    )}
+                    {camera.priceLaunchSource && (
+                      <div className="text-[10px] text-neutral-400 mt-0.5">
+                        {PRICE_SOURCE_LABELS[camera.priceLaunchSource] || camera.priceLaunchSource}
                       </div>
                     )}
                   </div>

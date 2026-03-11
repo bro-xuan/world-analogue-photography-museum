@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import asyncio
 import base64
 import json
 import os
 import re
 import time
-from pathlib import Path
+import unicodedata
 
 import httpx
 import truststore
@@ -60,11 +59,28 @@ def _build_search_query(manufacturer: str, name: str) -> str:
 
     # Remove parenthetical suffixes that hurt search
     query = re.sub(r"\s*\(.*?\)", "", query)
-    # Remove non-ASCII
-    query = re.sub(r"[^\x00-\x7F]", " ", query)
+    # Transliterate accented characters (ä→a, é→e, etc.) instead of stripping
+    query = unicodedata.normalize("NFKD", query)
+    query = query.encode("ascii", "ignore").decode("ascii")
     # Collapse whitespace
     query = re.sub(r"\s+", " ", query).strip()
     return query
+
+
+def _tokenize(text: str) -> set[str]:
+    """Split text into lowercase alphanumeric tokens for comparison."""
+    return set(re.findall(r"[a-z0-9]+", text.lower()))
+
+
+def _title_is_relevant(title: str, query: str) -> bool:
+    """Check that the listing title has sufficient token overlap with the search query."""
+    query_tokens = _tokenize(query)
+    title_tokens = _tokenize(title)
+    if not query_tokens:
+        return False
+    overlap = query_tokens & title_tokens
+    # Require at least 50% of query tokens present in the title
+    return len(overlap) >= max(2, len(query_tokens) * 0.5)
 
 
 def _median(values: list[float]) -> float:
@@ -83,8 +99,12 @@ def _extract_prices(data: dict, query: str) -> float | None:
         return None
 
     prices = []
-    query_lower = query.lower()
     for item in items:
+        # Title relevance check
+        title = item.get("title", "")
+        if not _title_is_relevant(title, query):
+            continue
+
         price_info = item.get("price", {})
         currency = price_info.get("currency", "")
         value = price_info.get("value")
@@ -101,14 +121,25 @@ def _extract_prices(data: dict, query: str) -> float | None:
 
         prices.append(price)
 
-    if len(prices) < 2:
+    # Accept single results for rare cameras (was: require >= 2)
+    if len(prices) < 1:
         return None
 
     return round(_median(prices), 2)
 
 
-def scrape_ebay_prices(limit: int = 0, marketplace: str = "EBAY_US") -> None:
-    """Fetch eBay prices for cameras without market prices."""
+def scrape_ebay_prices(
+    limit: int = 0,
+    marketplace: str = "EBAY_US",
+    force: bool = False,
+) -> None:
+    """Fetch eBay prices for cameras without market prices.
+
+    Args:
+        limit: Max number of cameras to process (0 = all).
+        marketplace: eBay marketplace ID.
+        force: If True, also refresh existing collectiblend prices with eBay data.
+    """
     cameras_path = MERGED_DIR / "cameras.json"
     if not cameras_path.exists():
         print("No merged cameras file found.")
@@ -117,10 +148,14 @@ def scrape_ebay_prices(limit: int = 0, marketplace: str = "EBAY_US") -> None:
     cameras = json.loads(cameras_path.read_text())
     print(f"Loaded {len(cameras)} cameras", flush=True)
 
-    # Build targets: cameras without market price
+    # Build targets: cameras without market price, or all with --force
     targets: list[tuple[int, str, str]] = []
     for idx, cam in enumerate(cameras):
-        if cam.get("price_market_usd"):
+        has_price = cam.get("price_market_usd")
+        if has_price and not force:
+            continue
+        # In force mode, skip cameras already sourced from eBay
+        if has_price and force and cam.get("price_market_source") == "ebay":
             continue
 
         mfr = cam.get("manufacturer_normalized") or cam.get("manufacturer", "")
@@ -134,7 +169,8 @@ def scrape_ebay_prices(limit: int = 0, marketplace: str = "EBAY_US") -> None:
 
         targets.append((idx, query, name))
 
-    print(f"Found {len(targets)} cameras needing market prices", flush=True)
+    mode_label = "all (force refresh)" if force else "missing only"
+    print(f"Found {len(targets)} cameras to price ({mode_label})", flush=True)
     if limit > 0:
         targets = targets[:limit]
         print(f"  Limiting to first {limit}", flush=True)
@@ -218,6 +254,7 @@ def scrape_ebay_prices(limit: int = 0, marketplace: str = "EBAY_US") -> None:
                 price = _extract_prices(data, query)
                 if price:
                     cameras[idx]["price_market_usd"] = price
+                    cameras[idx]["price_market_source"] = "ebay"
                     updated += 1
                 else:
                     skipped += 1
@@ -243,14 +280,17 @@ def main() -> None:
 
     limit = 0
     marketplace = "EBAY_US"
+    force = False
     args = sys.argv[1:]
     for i, arg in enumerate(args):
         if arg == "--limit" and i + 1 < len(args):
             limit = int(args[i + 1])
         if arg == "--marketplace" and i + 1 < len(args):
             marketplace = args[i + 1]
+        if arg == "--force":
+            force = True
 
-    scrape_ebay_prices(limit=limit, marketplace=marketplace)
+    scrape_ebay_prices(limit=limit, marketplace=marketplace, force=force)
 
 
 if __name__ == "__main__":

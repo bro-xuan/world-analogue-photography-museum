@@ -69,7 +69,7 @@ export default function BrandPage({ brand }: { brand: BrandEntry }) {
               <img
                 src={`/${brand.logo}`}
                 alt=""
-                className="max-h-full max-w-[200px] object-contain brightness-0"
+                className="max-h-full max-w-[200px] object-contain"
               />
             </div>
           )}

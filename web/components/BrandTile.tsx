@@ -9,35 +9,31 @@ export default function BrandTile({ brand }: BrandTileProps) {
   return (
     <Link
       href={`/brands/${brand.slug}`}
-      className="block group hover:opacity-90 transition-opacity"
+      className="block group"
     >
-      <div className="aspect-square bg-neutral-100 rounded-lg overflow-hidden">
-        <img
-          src={`/images/${brand.heroImage}`}
-          alt={brand.name}
-          loading="lazy"
-          className="w-full h-full object-contain"
-        />
-      </div>
-      <div className="mt-2">
+      <div className="aspect-square border border-neutral-200 rounded-lg flex items-center justify-center p-5 group-hover:border-neutral-300 transition-colors bg-white">
         {brand.logo ? (
-          <div className="h-5 flex items-center">
-            <img
-              src={`/${brand.logo}`}
-              alt={brand.name}
-              className="max-h-full max-w-full object-contain brightness-0"
-            />
-          </div>
+          <img
+            src={`/${brand.logo}`}
+            alt={brand.name}
+            loading="lazy"
+            className="max-h-full max-w-full object-contain"
+          />
         ) : (
-          <p className="text-sm font-medium text-neutral-800 truncate group-hover:text-neutral-600 transition-colors font-display">
+          <span className="text-lg font-semibold text-neutral-800 font-display text-center leading-tight">
             {brand.name}
-          </p>
+          </span>
         )}
-        <p className="text-xs text-neutral-400 mt-0.5">
-          {brand.cameraCount} camera{brand.cameraCount !== 1 ? "s" : ""}
-          {brand.country && <> &middot; {brand.country}</>}
-        </p>
       </div>
+      <div className="mt-2 flex items-baseline justify-between gap-2">
+        <p className="text-sm font-medium text-neutral-800 truncate">
+          {brand.name}
+        </p>
+        <span className="text-sm text-red-400 tabular-nums flex-shrink-0">
+          {brand.cameraCount}
+        </span>
+      </div>
+      <p className="text-xs text-neutral-400">{brand.slug}</p>
     </Link>
   );
 }

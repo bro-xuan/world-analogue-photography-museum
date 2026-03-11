@@ -47,6 +47,8 @@ export interface CameraDetail {
   specs?: Record<string, string>;
   priceLaunch?: number;
   priceMarket?: number;
+  priceLaunchSource?: string;
+  priceMarketSource?: string;
   cameraType?: string;
   priceAdjusted?: number;
   relatedCameras?: RelatedCamera[];

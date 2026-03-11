@@ -156,7 +156,7 @@ export default function Museum() {
       {/* Browse mode */}
       {showBrowse && (
         <div
-          className="fixed inset-0 bg-white z-40 overflow-y-auto"
+          className="fixed top-11 left-0 right-0 bottom-0 bg-white z-40 overflow-y-auto"
           style={browseStyle}
         >
           <FilterBar

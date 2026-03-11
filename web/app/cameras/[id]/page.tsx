@@ -25,5 +25,5 @@ export default async function CameraDetailPage({ params }: Props) {
   const { id } = await params;
   const camera = await loadCameraDetail(id);
   if (!camera) notFound();
-  return <CameraPage camera={camera} />;
+  return <CameraPage camera={camera} cameraId={id} />;
 }

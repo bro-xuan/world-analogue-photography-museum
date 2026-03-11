@@ -164,6 +164,8 @@ def main():
             "specs": specs if specs else None,
             "priceLaunch": cam.get("price_launch_usd"),
             "priceMarket": cam.get("price_market_usd"),
+            "priceLaunchSource": cam.get("price_launch_source"),
+            "priceMarketSource": cam.get("price_market_source"),
         }
 
         # Camera type (normalized)

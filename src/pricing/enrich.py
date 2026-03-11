@@ -9,13 +9,25 @@ from src.pricing.launch_prices import LAUNCH_PRICES, lookup_launch_price
 from src.utils.data_io import MERGED_DIR
 
 
-def _apply_curated_prices(cameras: list[dict]) -> int:
-    """Apply curated launch prices from the database. Returns count of prices applied."""
+def _purge_placeholder_market_prices(cameras: list[dict]) -> int:
+    """Remove $1 placeholder market prices from collectiblend. Returns count purged."""
     count = 0
     for cam in cameras:
-        if cam.get("price_launch_usd"):
-            continue  # Already has a price (e.g. from chinesecamera collector)
+        if cam.get("price_market_usd") == 1.0:
+            cam["price_market_usd"] = None
+            cam["price_market_source"] = None
+            count += 1
+    return count
 
+
+def _apply_curated_prices(cameras: list[dict]) -> int:
+    """Apply curated launch prices from the database. Returns count of prices applied.
+
+    Curated prices ALWAYS override other sources (chinesecamera, llm) since they are
+    manually verified from historical records.
+    """
+    count = 0
+    for cam in cameras:
         mfr = cam.get("manufacturer_normalized") or cam.get("manufacturer", "")
         name = cam.get("name", "")
 
@@ -30,7 +42,12 @@ def _apply_curated_prices(cameras: list[dict]) -> int:
                     cam["price_launch_usd"] = round(usd_price, 2)
                 except Exception:
                     continue
+            cam["price_launch_currency"] = currency
+            cam["price_launch_source"] = "curated"
             count += 1
+        elif cam.get("price_launch_usd") and not cam.get("price_launch_source"):
+            # Tag existing prices that came from chinesecamera collector
+            cam["price_launch_source"] = "chinesecamera"
     return count
 
 
@@ -62,8 +79,20 @@ def _apply_chinesecamera_prices(cameras: list[dict]) -> int:
         name_lower = cam.get("name", "").lower().strip()
         if name_lower in cn_prices:
             cam["price_launch_usd"] = cn_prices[name_lower][0]
+            cam["price_launch_currency"] = "CNY"
+            cam["price_launch_source"] = "chinesecamera"
             count += 1
 
+    return count
+
+
+def _tag_existing_market_sources(cameras: list[dict]) -> int:
+    """Tag existing market prices that lack a source as collectiblend."""
+    count = 0
+    for cam in cameras:
+        if cam.get("price_market_usd") and not cam.get("price_market_source"):
+            cam["price_market_source"] = "collectiblend"
+            count += 1
     return count
 
 
@@ -108,6 +137,11 @@ def enrich_prices() -> None:
     cameras = json.loads(cameras_path.read_text())
     print(f"Loaded {len(cameras)} cameras from {cameras_path}")
 
+    # Phase 0: Purge $1 placeholder market prices
+    print("\nPhase 0: Purging $1 placeholder market prices...")
+    purged = _purge_placeholder_market_prices(cameras)
+    print(f"  Purged {purged} placeholder prices")
+
     # Phase 1: Apply curated launch prices
     print("\nPhase 1: Applying curated launch prices...")
     curated_count = _apply_curated_prices(cameras)
@@ -118,8 +152,13 @@ def enrich_prices() -> None:
     cn_count = _apply_chinesecamera_prices(cameras)
     print(f"  Applied {cn_count} chinesecamera.com prices")
 
-    # Phase 3: Calculate inflation-adjusted prices
-    print("\nPhase 3: Calculating inflation-adjusted prices...")
+    # Phase 3: Tag existing market price sources
+    print("\nPhase 3: Tagging market price sources...")
+    tagged = _tag_existing_market_sources(cameras)
+    print(f"  Tagged {tagged} existing market prices as collectiblend")
+
+    # Phase 4: Calculate inflation-adjusted prices
+    print("\nPhase 4: Calculating inflation-adjusted prices...")
     adj_count = _apply_inflation_adjustment(cameras)
     print(f"  Calculated {adj_count} inflation-adjusted prices")
 
@@ -144,6 +183,7 @@ def enrich_prices() -> None:
         ("Leica", "Leica M3"),
         ("Hasselblad", "Hasselblad 500C"),
         ("Pentax", "Pentax K1000"),
+        ("FED", "FED 2"),
     ]
     for mfr, name in spot_checks:
         for cam in cameras:
@@ -152,7 +192,8 @@ def enrich_prices() -> None:
                 adjusted = cam.get("price_adjusted_usd", "N/A")
                 market = cam.get("price_market_usd", "N/A")
                 year = cam.get("year_introduced", "?")
-                print(f"  {name} ({year}): launch=${launch}, adjusted=${adjusted}, market=${market}")
+                src = cam.get("price_launch_source", "?")
+                print(f"  {name} ({year}): launch=${launch} [{src}], adjusted=${adjusted}, market=${market}")
                 break
 
     # Save enriched data

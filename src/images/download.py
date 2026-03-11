@@ -4,8 +4,11 @@ For cameras without images, searches multiple sources in waterfall order:
 1. Wikidata P18 property
 2. Wikimedia Commons search
 3. Flickr CC-licensed images (Scrapling scraper, no API key)
-4. DuckDuckGo image search / eBay listings
-5. Museum APIs (Smithsonian, Science Museum Group)
+4. Camera-wiki.org (Flickr embeds via HTML scraping)
+5. Manufacturer museums (Canon, Nikon)
+6. DuckDuckGo image search / eBay listings
+7. Museum APIs (Smithsonian, Science Museum Group)
+8. Google Custom Search (optional, requires API key)
 """
 
 import asyncio
@@ -14,6 +17,9 @@ import re
 from pathlib import Path
 from urllib.parse import unquote
 
+from src.images.camerawiki_search import search_camerawiki_images
+from src.images.google_search import search_google_images
+from src.images.manufacturer_museums import search_manufacturer_museum
 from src.images.museum_search import search_museum_images
 from src.images.web_search import search_ebay_images
 from src.utils.data_io import IMAGES_DIR, MERGED_DIR
@@ -337,6 +343,22 @@ async def download_camera_images(max_per_camera: int = 8, search_missing: bool =
                 commons_url = None
                 stats["searched"] += 1
 
+                # Try Camera-wiki.org (CC-licensed, multi-image)
+                if not commons_url:
+                    cwiki_results = await search_camerawiki_images(name, mfr, client, max_results=max_per_camera)
+                    if cwiki_results:
+                        commons_url = cwiki_results[0]["url"]
+                        camera.setdefault("images", []).extend(cwiki_results)
+                        real_images = cwiki_results
+
+                # Try manufacturer museum sites (Canon, Nikon, etc.)
+                if not commons_url:
+                    museum_mfr_results = await search_manufacturer_museum(name, mfr, client, max_results=max_per_camera)
+                    if museum_mfr_results:
+                        commons_url = museum_mfr_results[0]["url"]
+                        camera.setdefault("images", []).extend(museum_mfr_results)
+                        real_images = museum_mfr_results
+
                 # Try eBay
                 if not commons_url:
                     ebay_results = await search_ebay_images(name, mfr, client, max_results=max_per_camera)
@@ -345,13 +367,21 @@ async def download_camera_images(max_per_camera: int = 8, search_missing: bool =
                         camera.setdefault("images", []).extend(ebay_results)
                         real_images = ebay_results
 
-                # Try Museum APIs
+                # Try Museum APIs (Smithsonian, Science Museum)
                 if not commons_url:
                     museum_results = await search_museum_images(name, mfr, client)
                     if museum_results:
                         commons_url = museum_results[0]["url"]
                         camera.setdefault("images", []).extend(museum_results)
                         real_images = museum_results
+
+                # Try Google Custom Search (gap-filler, if API key configured)
+                if not commons_url:
+                    google_results = await search_google_images(name, mfr, client, max_results=max_per_camera)
+                    if google_results:
+                        commons_url = google_results[0]["url"]
+                        camera.setdefault("images", []).extend(google_results)
+                        real_images = google_results
 
                 if commons_url and not real_images:
                     print(f"  Found image for {mfr} {name}", flush=True)

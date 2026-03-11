@@ -2,7 +2,7 @@ from __future__ import annotations
 
 # Curated launch prices from historical ads, brochures, and manufacturer records.
 # Format: (manufacturer_normalized, model_pattern) -> (price, currency, year)
-# Currency codes: USD, JPY, DEM, GBP, EUR, SEK, CNY, RUB
+# Currency codes: USD, JPY, DEM, GBP, EUR, SEK, CNY, SUR
 # model_pattern is lowercase and matched against camera name (lowercase)
 
 LAUNCH_PRICES: dict[tuple[str, str], tuple[float, str, int]] = {
@@ -499,34 +499,34 @@ LAUNCH_PRICES: dict[tuple[str, str], tuple[float, str, int]] = {
     # -------------------------------------------------------------------------
     # Soviet / Russian
     # -------------------------------------------------------------------------
-    ("Zenit", "zenit 12sd"): (90.00, "RUB", 1983),
-    ("Zenit", "zenit 122"): (100.00, "RUB", 1990),
-    ("Zenit", "zenit ttl"): (80.00, "RUB", 1977),
-    ("Zenit", "zenit e"): (45.00, "RUB", 1965),
-    ("Zenit", "zenit b"): (38.00, "RUB", 1968),
-    ("FED", "fed 2"): (28.00, "RUB", 1955),
-    ("FED", "fed 3"): (45.00, "RUB", 1961),
-    ("FED", "fed 5"): (50.00, "RUB", 1977),
-    ("Kiev", "kiev 4"): (55.00, "RUB", 1957),
-    ("Kiev", "kiev 60"): (220.00, "RUB", 1971),
-    ("Kiev", "kiev 88"): (380.00, "RUB", 1980),
-    ("Zorki", "zorki 4k"): (35.00, "RUB", 1972),
-    ("Zorki", "zorki 4"): (30.00, "RUB", 1956),
-    ("LOMO", "lomo lc-a"): (68.00, "RUB", 1984),
-    ("Smena", "smena 8m"): (15.00, "RUB", 1970),
-    ("Lubitel", "lubitel 166b"): (18.00, "RUB", 1980),
-    ("Moskva", "moskva 5"): (75.00, "RUB", 1956),
-    ("Horizon", "horizon 202"): (150.00, "RUB", 1989),
-    ("Chaika", "chaika ii"): (22.00, "RUB", 1972),
-    ("Zenit", "zenit 11"): (65.00, "RUB", 1981),
-    ("Zenit", "zenit et"): (55.00, "RUB", 1982),
-    ("Zenit", "zenit 3m"): (40.00, "RUB", 1962),
-    ("FED", "fed atlas"): (65.00, "RUB", 1964),
-    ("Kiev", "kiev 19"): (70.00, "RUB", 1985),
-    ("Kiev", "kiev 35a"): (42.00, "RUB", 1985),
-    ("Zorki", "zorki 6"): (38.00, "RUB", 1959),
-    ("Smena", "smena symbol"): (12.00, "RUB", 1971),
-    ("Lubitel", "lubitel 2"): (10.00, "RUB", 1954),
+    ("Zenit", "zenit 12sd"): (90.00, "SUR", 1983),
+    ("Zenit", "zenit 122"): (100.00, "SUR", 1990),
+    ("Zenit", "zenit ttl"): (80.00, "SUR", 1977),
+    ("Zenit", "zenit e"): (45.00, "SUR", 1965),
+    ("Zenit", "zenit b"): (38.00, "SUR", 1968),
+    ("FED", "fed 2"): (28.00, "SUR", 1955),
+    ("FED", "fed 3"): (45.00, "SUR", 1961),
+    ("FED", "fed 5"): (50.00, "SUR", 1977),
+    ("Kiev", "kiev 4"): (55.00, "SUR", 1957),
+    ("Kiev", "kiev 60"): (220.00, "SUR", 1971),
+    ("Kiev", "kiev 88"): (380.00, "SUR", 1980),
+    ("Zorki", "zorki 4k"): (35.00, "SUR", 1972),
+    ("Zorki", "zorki 4"): (30.00, "SUR", 1956),
+    ("LOMO", "lomo lc-a"): (68.00, "SUR", 1984),
+    ("Smena", "smena 8m"): (15.00, "SUR", 1970),
+    ("Lubitel", "lubitel 166b"): (18.00, "SUR", 1980),
+    ("Moskva", "moskva 5"): (75.00, "SUR", 1956),
+    ("Horizon", "horizon 202"): (150.00, "SUR", 1989),
+    ("Chaika", "chaika ii"): (22.00, "SUR", 1972),
+    ("Zenit", "zenit 11"): (65.00, "SUR", 1981),
+    ("Zenit", "zenit et"): (55.00, "SUR", 1982),
+    ("Zenit", "zenit 3m"): (40.00, "SUR", 1962),
+    ("FED", "fed atlas"): (65.00, "SUR", 1964),
+    ("Kiev", "kiev 19"): (70.00, "SUR", 1985),
+    ("Kiev", "kiev 35a"): (42.00, "SUR", 1985),
+    ("Zorki", "zorki 6"): (38.00, "SUR", 1959),
+    ("Smena", "smena symbol"): (12.00, "SUR", 1971),
+    ("Lubitel", "lubitel 2"): (10.00, "SUR", 1954),
 
     # -------------------------------------------------------------------------
     # Fujifilm

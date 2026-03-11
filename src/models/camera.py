@@ -56,6 +56,9 @@ class Camera(BaseModel):
     price_launch_usd: float | None = None        # Original MSRP in USD at launch
     price_adjusted_usd: float | None = None       # Launch price adjusted to 2024 USD
     price_market_usd: float | None = None         # Current collector market value in USD
+    price_launch_currency: str | None = None      # Original currency (USD, JPY, DEM, SUR...)
+    price_launch_source: str | None = None        # "curated", "llm", "chinesecamera"
+    price_market_source: str | None = None        # "ebay", "collectiblend"
 
     # Media
     images: list[ImageReference] = Field(default_factory=list)
