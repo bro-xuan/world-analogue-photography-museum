@@ -1,13 +1,13 @@
 import BrandsListing from "@/components/BrandsListing";
 
 export const metadata = {
-  title: "Camera Brands — World Analogue Photography Museum",
-  description: "Browse analogue camera brands from around the world.",
+  title: "Camera Brands — World Analog Photography Museum",
+  description: "Browse analog camera brands from around the world.",
   openGraph: {
-    title: "Camera Brands — World Analogue Photography Museum",
-    description: "Browse analogue camera brands from around the world.",
+    title: "Camera Brands — World Analog Photography Museum",
+    description: "Browse analog camera brands from around the world.",
     type: "website",
-    siteName: "World Analogue Photography Museum",
+    siteName: "World Analog Photography Museum",
   },
   twitter: { card: "summary_large_image" as const },
 };

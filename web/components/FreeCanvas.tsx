@@ -355,7 +355,7 @@ export default function FreeCanvas({
                 className="font-display font-bold text-neutral-900 leading-tight tracking-tight"
                 style={{ fontSize: Math.max(28, Math.round(cell * 0.28)) }}
               >
-                World Analogue
+                World Analog
                 <br />
                 Photography Museum
               </h1>

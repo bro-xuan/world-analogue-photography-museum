@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props) {
   const { id } = await params;
   const camera = await loadCameraDetail(id);
   if (!camera) return { title: "Camera Not Found" };
-  const title = `${camera.name} — World Analogue Photography Museum`;
+  const title = `${camera.name} — World Analog Photography Museum`;
   const description = camera.description?.slice(0, 160);
   return {
     title,

@@ -16,8 +16,8 @@ export async function generateMetadata({ params }: Props) {
   const data = await loadBrandsData();
   const brand = data.allBrands.find((b) => b.slug === slug);
   if (!brand) return { title: "Brand Not Found" };
-  const title = `${brand.name} — World Analogue Photography Museum`;
-  const description = `Browse ${brand.cameraCount} analogue cameras by ${brand.name}.`;
+  const title = `${brand.name} — World Analog Photography Museum`;
+  const description = `Browse ${brand.cameraCount} analog cameras by ${brand.name}.`;
   return {
     title,
     description,

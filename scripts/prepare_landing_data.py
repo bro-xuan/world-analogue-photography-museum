@@ -189,6 +189,13 @@ def _image_path(local_path: str) -> str:
     return local_path
 
 
+# Post-arrangement position swaps: list of (nameA_substring, nameB_substring)
+# Post-arrangement position swaps: list of (exact_nameA, exact_nameB)
+POSITION_SWAPS = [
+    ("Kodak Folding Pocket No.3", "Nikon F-601"),
+    ("Instax Mini 11", "Ernemann Bob IV Stereo"),
+]
+
 HERO_COLS = 3
 HERO_ROWS = 2
 
@@ -406,6 +413,16 @@ def main():
 
     # Place cameras by distance from hero center
     final = _arrange_by_distance(xl_entries, l_entries, m_entries)
+
+    # Apply position swaps
+    for name_a, name_b in POSITION_SWAPS:
+        idx_a = next((i for i, e in enumerate(final) if e["name"] == name_a), None)
+        idx_b = next((i for i, e in enumerate(final) if e["name"] == name_b), None)
+        if idx_a is not None and idx_b is not None:
+            final[idx_a], final[idx_b] = final[idx_b], final[idx_a]
+            print(f"  Swapped positions: {final[idx_b]['name']} (#{idx_a}) <-> {final[idx_a]['name']} (#{idx_b})")
+        else:
+            print(f"  WARNING: swap failed — {name_a!r} at {idx_a}, {name_b!r} at {idx_b}")
 
     total_shown = len(final)
 

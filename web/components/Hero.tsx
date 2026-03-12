@@ -8,7 +8,7 @@ export default function Hero({ total, manufacturers }: HeroProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
       <div className="bg-white px-16 py-14 text-center pointer-events-auto">
         <h1 className="font-display text-4xl md:text-6xl font-bold text-neutral-900 leading-tight tracking-tight">
-          World Analogue
+          World Analog
           <br />
           Photography Museum
         </h1>
