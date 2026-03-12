@@ -17,14 +17,6 @@ const SPEC_LABELS: Record<string, string> = {
   battery: "Battery",
 };
 
-const PRICE_SOURCE_LABELS: Record<string, string> = {
-  curated: "verified",
-  llm: "est.",
-  chinesecamera: "verified",
-  ebay: "via eBay",
-  collectiblend: "via Collectiblend",
-};
-
 const RATING_LABELS: Record<string, string> = {
   buildQuality: "Build Quality",
   value: "Value",
@@ -184,11 +176,6 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
                       >
                         ~${camera.priceMarket.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </div>
-                      {camera.priceMarketSource && (
-                        <div className="text-neutral-400" style={{ fontSize: "max(12px, 1.1vh)", marginTop: "max(2px, 0.2vh)" }}>
-                          {PRICE_SOURCE_LABELS[camera.priceMarketSource] || camera.priceMarketSource}
-                        </div>
-                      )}
                     </div>
                   )}
                   {camera.priceLaunch != null && (
@@ -202,16 +189,6 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
                       >
                         ${camera.priceLaunch.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </div>
-                      {camera.priceAdjusted != null && (
-                        <div className="text-neutral-400" style={{ fontSize: "max(12px, 1.1vh)", marginTop: "max(2px, 0.2vh)" }}>
-                          ≈ ${camera.priceAdjusted.toLocaleString("en-US")} today
-                        </div>
-                      )}
-                      {camera.priceLaunchSource && (
-                        <div className="text-neutral-400" style={{ fontSize: "max(12px, 1.1vh)", marginTop: "max(2px, 0.2vh)" }}>
-                          {PRICE_SOURCE_LABELS[camera.priceLaunchSource] || camera.priceLaunchSource}
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
@@ -312,11 +289,6 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
                     >
                       ~${camera.priceMarket.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </div>
-                    {camera.priceMarketSource && (
-                      <div className="text-neutral-400" style={{ fontSize: "max(12px, 1.1vh)", marginTop: "max(2px, 0.2vh)" }}>
-                        {PRICE_SOURCE_LABELS[camera.priceMarketSource] || camera.priceMarketSource}
-                      </div>
-                    )}
                   </div>
                 )}
                 {camera.priceLaunch != null && (
@@ -330,16 +302,6 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
                     >
                       ${camera.priceLaunch.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </div>
-                    {camera.priceAdjusted != null && (
-                      <div className="text-neutral-400" style={{ fontSize: "max(12px, 1.1vh)", marginTop: "max(2px, 0.2vh)" }}>
-                        ≈ ${camera.priceAdjusted.toLocaleString("en-US")} today
-                      </div>
-                    )}
-                    {camera.priceLaunchSource && (
-                      <div className="text-neutral-400" style={{ fontSize: "max(12px, 1.1vh)", marginTop: "max(2px, 0.2vh)" }}>
-                        {PRICE_SOURCE_LABELS[camera.priceLaunchSource] || camera.priceLaunchSource}
-                      </div>
-                    )}
                   </div>
                 )}
               </div>

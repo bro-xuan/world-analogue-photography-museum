@@ -9,6 +9,7 @@ import FilterBar, {
 } from "./browse/FilterBar";
 import BrowseGrid from "./browse/BrowseGrid";
 import { CameraEntry, fetchLandingData } from "@/lib/cameras";
+import { useMuseum } from "@/contexts/MuseumContext";
 
 type Mode = "canvas" | "entering-browse" | "browse" | "leaving-browse";
 
@@ -109,12 +110,19 @@ export default function Museum() {
   }, []);
 
   const leaveBrowse = useCallback(() => {
+    if (mode !== "browse") return;
     setMode("leaving-browse");
     setTimeout(() => {
       setMode("canvas");
       setFilters({ ...EMPTY_FILTER, formats: new Set(), decades: new Set() });
     }, TRANSITION_MS);
-  }, []);
+  }, [mode]);
+
+  // Register leaveBrowse so navbar logo can trigger it
+  const { registerLeaveBrowse } = useMuseum();
+  useEffect(() => {
+    registerLeaveBrowse(leaveBrowse);
+  }, [registerLeaveBrowse, leaveBrowse]);
 
   if (loading) {
     return (

@@ -24,8 +24,8 @@ export default function BrandTile({ brand }: BrandTileProps) {
           />
         ) : (
           <span
-            className="font-semibold text-neutral-800 font-display text-center leading-tight"
-            style={{ fontSize: "max(14px, 1.3vh)" }}
+            className="font-bold text-black text-center leading-tight uppercase tracking-widest"
+            style={{ fontSize: "max(16px, 1.5vh)" }}
           >
             {brand.name}
           </span>

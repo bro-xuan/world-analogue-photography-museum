@@ -46,6 +46,7 @@ CURATED_CAMERAS = [
     ("Lomo LC-A", "Lomo LC-A", None),
     ("Kodak Brownie", "Kodak Brownie", None),
     ("Kodak 35", "Kodak 35", None),
+    ("Zeiss Ikon Kolibri", "Zeiss Ikon Kolibri", "Zeiss"),
 ]
 
 PRESTIGE_BRANDS = {

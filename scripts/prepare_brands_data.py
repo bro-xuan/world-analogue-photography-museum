@@ -193,6 +193,11 @@ def main():
     print(f"Skipped {skipped} cameras (no image or no manufacturer)")
     print(f"Found {len(brands)} brands with images")
 
+    # Filter out brands with fewer than 3 cameras
+    before = len(brands)
+    brands = {mfr: info for mfr, info in brands.items() if len(info["cameras"]) >= 3}
+    print(f"Filtered {before - len(brands)} brands with <3 cameras, {len(brands)} remain")
+
     # Build brand entries
     all_brands = []
     for mfr, info in brands.items():

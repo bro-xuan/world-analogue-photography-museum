@@ -4,11 +4,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMuseum } from "@/contexts/MuseumContext";
 import UserMenu from "./auth/UserMenu";
 
 export default function NavBar() {
   const { user, loading, signIn } = useAuth();
   const pathname = usePathname();
+  const { triggerLeaveBrowse } = useMuseum();
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-lg border-b border-neutral-200/60">
@@ -17,7 +19,17 @@ export default function NavBar() {
         style={{ height: "max(60px, 5.5vh)" }}
       >
         {/* Logo + Name */}
-        <Link href="/" className="flex items-center gap-3 group" aria-label="Home">
+        <Link
+          href="/"
+          className="flex items-center gap-3 group"
+          aria-label="Home"
+          onClick={(e) => {
+            if (pathname === "/") {
+              e.preventDefault();
+              triggerLeaveBrowse();
+            }
+          }}
+        >
           <Image
             src="/logo.png"
             alt="WAPM"
@@ -46,6 +58,12 @@ export default function NavBar() {
             style={{
               padding: "max(8px, 0.7vh) max(18px, 1.6vh)",
               fontSize: "max(14px, 1.5vh)",
+            }}
+            onClick={(e) => {
+              if (pathname === "/") {
+                e.preventDefault();
+                triggerLeaveBrowse();
+              }
             }}
           >
             Collection
