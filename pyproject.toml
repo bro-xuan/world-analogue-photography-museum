@@ -17,6 +17,7 @@ dependencies = [
     "duckduckgo-search>=8.1.1",
     "rembg>=2.0.69",
     "onnxruntime>=1.24.3",
+    "cairosvg>=2.8.2",
 ]
 
 [project.optional-dependencies]

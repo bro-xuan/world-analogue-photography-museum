@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter, Playfair_Display, Space_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import NavBar from "@/components/NavBar";
@@ -12,6 +12,12 @@ const inter = Inter({
 const playfair = Playfair_Display({
   variable: "--font-playfair",
   subsets: ["latin"],
+});
+
+const spaceMono = Space_Mono({
+  variable: "--font-space-mono",
+  subsets: ["latin"],
+  weight: ["700"],
 });
 
 export const metadata: Metadata = {
@@ -36,7 +42,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${playfair.variable} antialiased bg-white`}
+        className={`${inter.variable} ${playfair.variable} ${spaceMono.variable} antialiased bg-white`}
       >
         <Providers>
           <NavBar />

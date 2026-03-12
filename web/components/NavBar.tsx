@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import UserMenu from "./auth/UserMenu";
@@ -17,24 +18,19 @@ export default function NavBar() {
       >
         {/* Logo + Name */}
         <Link href="/" className="flex items-center gap-3 group" aria-label="Home">
-          <div
-            className="rounded-full bg-neutral-900 flex items-center justify-center shrink-0"
-            style={{ width: "max(32px, 3vh)", height: "max(32px, 3vh)" }}
-          >
-            <svg
-              style={{ width: "max(16px, 1.5vh)", height: "max(16px, 1.5vh)" }}
-              viewBox="0 0 14 14"
-              fill="none"
-            >
-              <circle cx="7" cy="7" r="5" stroke="white" strokeWidth="1.2" />
-              <circle cx="7" cy="7" r="2" fill="white" />
-            </svg>
-          </div>
+          <Image
+            src="/logo.png"
+            alt="WAPM"
+            width={40}
+            height={40}
+            className="shrink-0"
+            style={{ width: "max(32px, 3.5vh)", height: "auto" }}
+          />
           <span
-            className="font-display font-semibold text-neutral-900 tracking-tight hidden sm:block group-hover:text-neutral-600 transition-colors"
-            style={{ fontSize: "max(16px, 1.6vh)" }}
+            className="font-bold text-neutral-900 tracking-tight hidden sm:block group-hover:text-neutral-600 transition-colors"
+            style={{ fontSize: "max(14px, 1.4vh)", fontFamily: "var(--font-space-mono)" }}
           >
-            WAPM
+            analogcams.com
           </span>
         </Link>
 

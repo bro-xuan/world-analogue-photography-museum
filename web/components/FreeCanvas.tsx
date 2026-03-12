@@ -437,7 +437,7 @@ export default function FreeCanvas({
               </svg>
             </button>
 
-            <p className="tracking-[0.3em] uppercase text-neutral-400" style={{ fontSize: Math.max(13, Math.round(cell * 0.065)), marginBottom: Math.max(24, Math.round(cell * 0.12)) }}>
+            <p className="tracking-[0.3em] uppercase text-neutral-400" style={{ fontSize: Math.max(14, Math.round(cell * 0.08)), marginBottom: Math.max(24, Math.round(cell * 0.12)) }}>
               The story behind
             </p>
 
@@ -478,7 +478,7 @@ export default function FreeCanvas({
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
                 className="inline-flex items-center font-medium text-neutral-700 bg-white border border-neutral-200 rounded-full hover:border-neutral-400 transition-colors cursor-pointer"
-                style={{ fontSize: Math.max(14, Math.round(cell * 0.07)), padding: `${Math.round(cell * 0.04)}px ${Math.round(cell * 0.1)}px`, gap: Math.max(8, Math.round(cell * 0.04)) }}
+                style={{ fontSize: Math.max(17, Math.round(cell * 0.09)), padding: `${Math.round(cell * 0.04)}px ${Math.round(cell * 0.1)}px`, gap: Math.max(8, Math.round(cell * 0.04)) }}
               >
                 <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="" width="24" height="24" />
                 Buy me a coffee
