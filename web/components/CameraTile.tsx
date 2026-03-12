@@ -19,7 +19,7 @@ export default function CameraTile({ camera, hasDetail, browse }: CameraTileProp
           className="w-full h-full object-contain select-none"
         />
       </div>
-      <p className="text-[10px] text-neutral-400 mt-1 leading-tight truncate text-center">
+      <p className="text-[max(10px,1.1vh)] text-neutral-400 mt-1 leading-tight truncate text-center">
         {camera.name}
       </p>
     </>

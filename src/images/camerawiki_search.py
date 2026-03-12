@@ -74,6 +74,22 @@ async def _get_page_html(client: RateLimitedClient, title: str) -> str | None:
     return None
 
 
+def _make_noverify_client() -> RateLimitedClient:
+    """Create a RateLimitedClient with SSL verification disabled for camera-wiki.org."""
+    return RateLimitedClient(min_delay=4.0, verify_ssl=False)
+
+
+# Module-level shared client for camera-wiki.org (SSL issues)
+_cwiki_client: RateLimitedClient | None = None
+
+
+def _get_cwiki_client() -> RateLimitedClient:
+    global _cwiki_client
+    if _cwiki_client is None:
+        _cwiki_client = _make_noverify_client()
+    return _cwiki_client
+
+
 def _extract_image_urls(html: str) -> list[str]:
     """Extract unique Flickr image URLs from the FIRST section of a camera-wiki page.
 
@@ -119,7 +135,7 @@ def _extract_image_urls(html: str) -> list[str]:
 async def search_camerawiki_images(
     camera_name: str,
     manufacturer: str,
-    client: RateLimitedClient,
+    client: RateLimitedClient | None = None,
     max_results: int = 3,
 ) -> list[dict] | None:
     """Search camera-wiki.org for images of a camera.
@@ -130,6 +146,9 @@ async def search_camerawiki_images(
 
     Returns list of {"url", "source", "license", "caption"} or None.
     """
+    # camera-wiki.org has SSL cert issues — use a dedicated no-verify client
+    cwiki_client = _get_cwiki_client()
+
     # Build candidate page titles (try direct page first, then search)
     candidates = []
     if manufacturer and not camera_name.lower().startswith(manufacturer.lower()):
@@ -141,7 +160,7 @@ async def search_camerawiki_images(
     html = None
     page_title = None
     for title in candidates:
-        html = await _get_page_html(client, title)
+        html = await _get_page_html(cwiki_client, title)
         if html:
             page_title = title
             break
@@ -149,9 +168,9 @@ async def search_camerawiki_images(
     # Fall back to search API if direct load failed
     if not html:
         for query in candidates:
-            page_title = await _search_page(client, query)
+            page_title = await _search_page(cwiki_client, query)
             if page_title:
-                html = await _get_page_html(client, page_title)
+                html = await _get_page_html(cwiki_client, page_title)
                 if html:
                     break
 

@@ -42,6 +42,7 @@ export default function Museum() {
   const [filters, setFilters] = useState<FilterState>({
     ...EMPTY_FILTER,
     formats: new Set(),
+    decades: new Set(),
   });
 
   // Pre-compute filter options
@@ -75,7 +76,7 @@ export default function Museum() {
 
     const searchLower = filters.search.toLowerCase();
 
-    return cameras.filter((cam) => {
+    const filtered = cameras.filter((cam) => {
       if (filters.country && cam.country !== filters.country) return false;
       if (filters.formats.size > 0 && (!cam.format || !filters.formats.has(cam.format)))
         return false;
@@ -84,16 +85,22 @@ export default function Museum() {
         cam.manufacturer.toLowerCase() !== filters.manufacturer.toLowerCase()
       )
         return false;
-      if (filters.decadeStart !== null && cam.year) {
+      if (filters.decades.size > 0 && cam.year) {
         const decade = Math.floor(cam.year / 10) * 10;
-        const end = filters.decadeEnd ?? filters.decadeStart;
-        if (decade < filters.decadeStart || decade > end) return false;
+        if (!filters.decades.has(decade)) return false;
       }
-      if (filters.decadeStart !== null && !cam.year) return false;
+      if (filters.decades.size > 0 && !cam.year) return false;
       if (searchLower && !cam.name.toLowerCase().includes(searchLower))
         return false;
       return true;
     });
+
+    // Sort by year when decade filters are active
+    if (filters.decades.size > 0) {
+      filtered.sort((a, b) => (a.year ?? 0) - (b.year ?? 0));
+    }
+
+    return filtered;
   }, [cameras, filters]);
 
   const enterBrowse = useCallback(() => {
@@ -105,7 +112,7 @@ export default function Museum() {
     setMode("leaving-browse");
     setTimeout(() => {
       setMode("canvas");
-      setFilters({ ...EMPTY_FILTER, formats: new Set() });
+      setFilters({ ...EMPTY_FILTER, formats: new Set(), decades: new Set() });
     }, TRANSITION_MS);
   }, []);
 

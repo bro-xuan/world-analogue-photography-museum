@@ -30,10 +30,14 @@ _CAMERA_TYPE_MAP: dict[str, str] = {
 }
 
 
+_CAMERA_TYPE_DISPLAY = {v.lower(): v for v in set(_CAMERA_TYPE_MAP.values())}
+
+
 def _normalize_camera_type(raw: str | None) -> str | None:
     if not raw:
         return None
-    return _CAMERA_TYPE_MAP.get(raw.lower().strip())
+    key = raw.lower().strip()
+    return _CAMERA_TYPE_MAP.get(key) or _CAMERA_TYPE_DISPLAY.get(key)
 
 
 def _has_image_on_disk(cam: dict) -> str | None:
@@ -136,6 +140,9 @@ def main():
 
         # Build specs dict (only non-null values)
         specs: dict[str, str | int] = {}
+        ct = _normalize_camera_type(cam.get("camera_type"))
+        if ct:
+            specs["type"] = ct
         if cam.get("film_format"):
             specs["format"] = cam["film_format"]
         if cam.get("lens_mount"):
@@ -168,11 +175,6 @@ def main():
             "priceMarketSource": cam.get("price_market_source"),
         }
 
-        # Camera type (normalized)
-        ct = _normalize_camera_type(cam.get("camera_type"))
-        if ct:
-            entry["cameraType"] = ct
-
         # Ratings (pre-generated editorial scores)
         ratings = cam.get("ratings")
         if ratings:
@@ -201,14 +203,14 @@ def main():
     out_path.write_text(json.dumps(detail_map, ensure_ascii=False, separators=(",", ":")))
 
     # Stats
-    n_type = sum(1 for e in detail_map.values() if "cameraType" in e)
+    n_type = sum(1 for e in detail_map.values() if e.get("specs", {}).get("type"))
     n_adj = sum(1 for e in detail_map.values() if "priceAdjusted" in e)
     n_rel = sum(1 for e in detail_map.values() if "relatedCameras" in e)
     n_rat = sum(1 for e in detail_map.values() if "ratings" in e)
 
     print(f"\nWrote {out_path}")
     print(f"  Cameras with detail pages: {len(detail_map)}")
-    print(f"  With cameraType: {n_type}")
+    print(f"  With type in specs: {n_type}")
     print(f"  With priceAdjusted: {n_adj}")
     print(f"  With relatedCameras: {n_rel}")
     print(f"  With ratings: {n_rat}")

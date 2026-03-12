@@ -49,7 +49,6 @@ export interface CameraDetail {
   priceMarket?: number;
   priceLaunchSource?: string;
   priceMarketSource?: string;
-  cameraType?: string;
   priceAdjusted?: number;
   relatedCameras?: RelatedCamera[];
   ratings?: CameraRatings;

@@ -7,6 +7,7 @@ import RelatedCameras from "@/components/camera/RelatedCameras";
 import CollectionButtons from "@/components/camera/CollectionButtons";
 
 const SPEC_LABELS: Record<string, string> = {
+  type: "Type",
   format: "Film Format",
   lens: "Lens / Mount",
   shutter: "Shutter",
@@ -186,16 +187,9 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
           <div className="order-2">
             {/* Header */}
             <div>
-              <div className="flex items-start gap-3 flex-wrap">
-                <h1 className="font-display text-3xl md:text-4xl font-bold text-neutral-900 leading-tight">
-                  {camera.name}
-                </h1>
-                {camera.cameraType && (
-                  <span className="mt-1.5 md:mt-2.5 inline-block px-2.5 py-0.5 text-xs font-medium text-neutral-500 bg-neutral-100 rounded-full whitespace-nowrap">
-                    {camera.cameraType}
-                  </span>
-                )}
-              </div>
+              <h1 className="font-display text-3xl md:text-4xl font-bold text-neutral-900 leading-tight">
+                {camera.name}
+              </h1>
 
               <p className="mt-2 text-sm text-neutral-400">
                 {camera.manufacturer}

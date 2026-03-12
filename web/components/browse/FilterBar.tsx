@@ -6,8 +6,7 @@ export interface FilterState {
   country: string;
   formats: Set<string>;
   manufacturer: string;
-  decadeStart: number | null;
-  decadeEnd: number | null;
+  decades: Set<number>;
   search: string;
 }
 
@@ -15,8 +14,7 @@ export const EMPTY_FILTER: FilterState = {
   country: "",
   formats: new Set(),
   manufacturer: "",
-  decadeStart: null,
-  decadeEnd: null,
+  decades: new Set(),
   search: "",
 };
 
@@ -25,8 +23,7 @@ export function isFilterEmpty(f: FilterState): boolean {
     !f.country &&
     f.formats.size === 0 &&
     !f.manufacturer &&
-    f.decadeStart === null &&
-    f.decadeEnd === null &&
+    f.decades.size === 0 &&
     !f.search
   );
 }
@@ -99,27 +96,18 @@ export default function FilterBar({
   };
 
   const toggleDecade = (decade: number) => {
-    if (filters.decadeStart === decade && filters.decadeEnd === decade) {
-      update({ decadeStart: null, decadeEnd: null });
-    } else if (filters.decadeStart === null) {
-      update({ decadeStart: decade, decadeEnd: decade });
-    } else if (decade < filters.decadeStart) {
-      update({ decadeStart: decade });
-    } else if (decade > (filters.decadeEnd ?? filters.decadeStart)) {
-      update({ decadeEnd: decade });
-    } else {
-      update({ decadeStart: decade, decadeEnd: decade });
-    }
+    const next = new Set(filters.decades);
+    if (next.has(decade)) next.delete(decade);
+    else next.add(decade);
+    update({ decades: next });
   };
 
   const isDecadeActive = (decade: number) => {
-    if (filters.decadeStart === null) return false;
-    const end = filters.decadeEnd ?? filters.decadeStart;
-    return decade >= filters.decadeStart && decade <= end;
+    return filters.decades.has(decade);
   };
 
   const clearAll = () => {
-    onChange({ ...EMPTY_FILTER, formats: new Set() });
+    onChange({ ...EMPTY_FILTER, formats: new Set(), decades: new Set() });
     setMfrQuery("");
   };
 
@@ -214,7 +202,7 @@ export default function FilterBar({
             />
             {mfrOpen && filteredMfrs.length > 0 && (
               <div className="absolute top-full left-0 mt-1 w-48 max-h-60 overflow-y-auto bg-white border border-neutral-200 rounded-lg shadow-lg z-50">
-                {filteredMfrs.slice(0, 30).map((m) => (
+                {filteredMfrs.map((m) => (
                   <button
                     key={m}
                     onClick={() => {

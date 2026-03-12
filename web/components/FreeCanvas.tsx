@@ -2,19 +2,22 @@
 
 import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { CameraEntry } from "@/lib/cameras";
 import CameraTile from "./CameraTile";
 
-const CELL = 150;
-const GAP = 20;
-const CELL_STEP = CELL + GAP;
-const ROW_HEIGHT = CELL + 20; // image + text
-const ROW_STEP = ROW_HEIGHT + GAP;
+const TARGET_ROWS = 6; // how many rows visible on screen
 const HERO_COLS = 3;
 const HERO_ROWS = 2;
 const DRAG_THRESHOLD = 5;
 const BUFFER = 3; // extra cells to render outside viewport
+
+function computeGrid(vh: number) {
+  const rowStep = Math.floor(vh / TARGET_ROWS);
+  const gap = Math.max(16, Math.round(rowStep * 0.08));
+  const textSpace = Math.max(18, Math.round(rowStep * 0.07));
+  const cell = rowStep - gap - textSpace;
+  return { cell, gap, cellStep: cell + gap, rowHeight: cell + textSpace, rowStep };
+}
 
 interface FreeCanvasProps {
   cameras: CameraEntry[];
@@ -41,12 +44,16 @@ export default function FreeCanvas({
   const router = useRouter();
 
   const [ready, setReady] = useState(false);
+  const [showStory, setShowStory] = useState(false);
+  const [grid, setGrid] = useState(() => computeGrid(typeof window !== "undefined" ? window.innerHeight : 900));
   const [visibleRange, setVisibleRange] = useState({
     colStart: 0,
     colEnd: 0,
     rowStart: 0,
     rowEnd: 0,
   });
+
+  const { cell, gap, cellStep, rowHeight, rowStep } = grid;
 
   const totalNeeded = cameras.length + HERO_COLS * HERO_ROWS;
   const cols = Math.ceil(Math.sqrt(totalNeeded));
@@ -57,8 +64,15 @@ export default function FreeCanvas({
   const heroRowStart = Math.floor((rows - HERO_ROWS) / 2) + 1;
 
   // Total canvas dimensions
-  const canvasWidth = cols * CELL_STEP - GAP;
-  const canvasHeight = rows * ROW_STEP - GAP;
+  const canvasWidth = cols * cellStep - gap;
+  const canvasHeight = rows * rowStep - gap;
+
+  // Recompute grid on resize
+  useEffect(() => {
+    const onResize = () => setGrid(computeGrid(window.innerHeight));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   // Build cell lookup: "col,row" -> CameraEntry
   const cellMap = useMemo(() => {
@@ -88,12 +102,12 @@ export default function FreeCanvas({
     const y = pos.current.y;
 
     return {
-      colStart: Math.max(1, Math.floor(-x / CELL_STEP) + 1 - BUFFER),
-      colEnd: Math.min(cols, Math.ceil((-x + vw) / CELL_STEP) + BUFFER),
-      rowStart: Math.max(1, Math.floor(-y / ROW_STEP) + 1 - BUFFER),
-      rowEnd: Math.min(rows, Math.ceil((-y + vh) / ROW_STEP) + BUFFER),
+      colStart: Math.max(1, Math.floor(-x / cellStep) + 1 - BUFFER),
+      colEnd: Math.min(cols, Math.ceil((-x + vw) / cellStep) + BUFFER),
+      rowStart: Math.max(1, Math.floor(-y / rowStep) + 1 - BUFFER),
+      rowEnd: Math.min(rows, Math.ceil((-y + vh) / rowStep) + BUFFER),
     };
-  }, [cols, rows]);
+  }, [cols, rows, cellStep, rowStep]);
 
   // Update visible range if it changed
   const lastRange = useRef({ colStart: 0, colEnd: 0, rowStart: 0, rowEnd: 0 });
@@ -122,9 +136,9 @@ export default function FreeCanvas({
   useEffect(() => {
     // Hero center in pixel coordinates
     const heroCenterX =
-      (heroColStart - 1) * CELL_STEP + (HERO_COLS * CELL_STEP - GAP) / 2;
+      (heroColStart - 1) * cellStep + (HERO_COLS * cellStep - gap) / 2;
     const heroCenterY =
-      (heroRowStart - 1) * ROW_STEP + (HERO_ROWS * ROW_STEP - GAP) / 2;
+      (heroRowStart - 1) * rowStep + (HERO_ROWS * rowStep - gap) / 2;
 
     pos.current = {
       x: -(heroCenterX - window.innerWidth / 2),
@@ -140,7 +154,7 @@ export default function FreeCanvas({
     lastRange.current = range;
     setVisibleRange(range);
     setReady(true);
-  }, [cols, rows, heroColStart, heroRowStart, computeVisibleRange]);
+  }, [cols, rows, heroColStart, heroRowStart, cellStep, rowStep, gap, computeVisibleRange]);
 
   // Pointer & wheel event handlers
   useEffect(() => {
@@ -153,8 +167,8 @@ export default function FreeCanvas({
     };
 
     const onPointerDown = (e: PointerEvent) => {
-      // Ignore if target is a button (let button clicks through)
-      if ((e.target as HTMLElement).closest("button")) return;
+      // Ignore if target is a button or link (let clicks through)
+      if ((e.target as HTMLElement).closest("button, a")) return;
       dragging.current = true;
       dragDistance.current = 0;
       dragStart.current = { x: e.clientX, y: e.clientY };
@@ -270,8 +284,8 @@ export default function FreeCanvas({
     for (let c = visibleRange.colStart; c <= visibleRange.colEnd; c++) {
       const camera = cellMap.get(`${c},${r}`);
       if (camera) {
-        const left = (c - 1) * CELL_STEP;
-        const top = (r - 1) * ROW_STEP;
+        const left = (c - 1) * cellStep;
+        const top = (r - 1) * rowStep;
         visibleTiles.push(
           <div
             key={camera.id}
@@ -279,7 +293,7 @@ export default function FreeCanvas({
               position: "absolute",
               left,
               top,
-              width: CELL,
+              width: cell,
             }}
           >
             <CameraTile
@@ -293,10 +307,10 @@ export default function FreeCanvas({
   }
 
   // Hero position
-  const heroLeft = (heroColStart - 1) * CELL_STEP;
-  const heroTop = (heroRowStart - 1) * ROW_STEP;
-  const heroWidth = HERO_COLS * CELL_STEP - GAP;
-  const heroHeight = HERO_ROWS * ROW_STEP - GAP;
+  const heroLeft = (heroColStart - 1) * cellStep;
+  const heroTop = (heroRowStart - 1) * rowStep;
+  const heroWidth = HERO_COLS * cellStep - gap;
+  const heroHeight = HERO_ROWS * rowStep - gap;
 
   // Check if hero is in visible range
   const heroVisible =
@@ -334,32 +348,60 @@ export default function FreeCanvas({
               height: heroHeight,
             }}
           >
-            <div className="text-center max-w-lg mx-4">
-              <h1 className="font-display text-4xl md:text-6xl font-bold text-neutral-900 leading-tight tracking-tight">
+            <div className="text-center mx-4" style={{ maxWidth: heroWidth * 0.9 }}>
+              <h1
+                className="font-display font-bold text-neutral-900 leading-tight tracking-tight"
+                style={{ fontSize: Math.max(28, Math.round(cell * 0.28)) }}
+              >
                 World Analogue
                 <br />
                 Photography Museum
               </h1>
-              <p className="mt-4 text-sm md:text-base text-neutral-500">
+              <p
+                className="text-neutral-500"
+                style={{ marginTop: Math.round(cell * 0.06), fontSize: Math.max(12, Math.round(cell * 0.08)) }}
+              >
                 {manufacturers.toLocaleString("en-US")} brands &middot;{" "}
                 {total.toLocaleString("en-US")} cameras
               </p>
-              <div className="mt-6 flex items-center gap-3 justify-center">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onBrowse?.();
-                  }}
-                  className="px-5 py-2 text-sm font-medium text-neutral-900 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer"
+              <div
+                className="flex flex-col items-center"
+                style={{ marginTop: Math.round(cell * 0.1), gap: Math.round(cell * 0.06) }}
+              >
+                <div className="flex items-center" style={{ gap: Math.round(cell * 0.04) }}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onBrowse?.();
+                    }}
+                    className="font-medium text-neutral-900 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer"
+                    style={{ padding: `${Math.round(cell * 0.04)}px ${Math.round(cell * 0.1)}px`, fontSize: Math.max(12, Math.round(cell * 0.07)) }}
+                  >
+                    Browse collection &darr;
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowStory(true);
+                    }}
+                    className="font-medium text-neutral-500 border border-neutral-200 rounded-full hover:bg-neutral-50 hover:text-neutral-700 transition-colors cursor-pointer"
+                    style={{ padding: `${Math.round(cell * 0.04)}px ${Math.round(cell * 0.1)}px`, fontSize: Math.max(12, Math.round(cell * 0.07)) }}
+                  >
+                    Story behind
+                  </button>
+                </div>
+                <a
+                  href="https://x.com/Erc721_stefan"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="text-neutral-400 hover:text-neutral-600 transition-colors flex items-center gap-1 cursor-pointer"
+                  style={{ fontSize: Math.max(10, Math.round(cell * 0.055)) }}
                 >
-                  Browse collection &darr;
-                </button>
-                <Link
-                  href="/brands"
-                  className="px-5 py-2 text-sm font-medium text-neutral-900 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors"
-                >
-                  Browse brands &rarr;
-                </Link>
+                  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-current" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+                  by @Erc721_stefan
+                </a>
               </div>
             </div>
           </div>
@@ -368,6 +410,90 @@ export default function FreeCanvas({
         {/* Visible camera tiles */}
         {visibleTiles}
       </div>
+
+      {/* Story modal */}
+      {showStory && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center"
+          onClick={() => setShowStory(false)}
+          style={{ animation: "fade-in 0.2s ease-out" }}
+        >
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div
+            className="relative bg-white max-w-lg w-full mx-4 p-10 md:p-14 max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+            style={{ animation: "story-in 0.3s ease-out" }}
+          >
+            <button
+              onClick={() => setShowStory(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-neutral-400 hover:text-neutral-700 transition-colors cursor-pointer"
+              aria-label="Close"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M4 4l8 8M12 4l-8 8" />
+              </svg>
+            </button>
+
+            <p className="text-[10px] tracking-[0.3em] uppercase text-neutral-400 mb-6">
+              The story behind
+            </p>
+
+            <div className="space-y-5 text-[15px] leading-relaxed text-neutral-600">
+              <p>
+                First year of college, I blew my entire scholarship on a Canon 70D.
+                No regrets. I got obsessed, signed with Getty Images, won some awards,
+                shot for GQ China, did weddings, restaurants, the whole commercial circuit.
+              </p>
+
+              <p>
+                Then digital started feeling like work. Seven years ago I picked up
+                a <a href="/cameras/b076ba15" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} className="text-neutral-900 underline underline-offset-2 decoration-neutral-300 hover:decoration-neutral-900 transition-colors">Rollei 35S</a> in black, mostly
+                out of curiosity. Photography feels like pure joy again.
+              </p>
+
+              <p>
+                The history, the mechanics, the 36-exposure discipline, the wait for
+                development. Turns out I like all of it. The collection grew.
+                Leica, mostly. No surprise there.
+              </p>
+
+              <p>
+                I was living in Berlin, and Germany happens to sit on an absurd amount of
+                vintage camera stock. So naturally I started trading, buying here,
+                selling back to China.
+              </p>
+
+              <p className="text-neutral-900 pt-2">
+                This is the museum I wished existed. Every camera catalogued, every
+                format represented. If you enjoyed browsing, consider buying me a coffee.
+              </p>
+            </div>
+
+            <div className="mt-8 flex justify-center">
+              <a
+                href="/support"
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-2.5 px-5 py-2.5 text-sm font-medium text-neutral-700 bg-white border border-neutral-200 rounded-full hover:border-neutral-400 transition-colors cursor-pointer"
+              >
+                <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="" width="20" height="20" />
+                Buy me a coffee
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes story-in {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
