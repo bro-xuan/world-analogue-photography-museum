@@ -39,7 +39,10 @@ export default function Museum() {
     [cameras]
   );
 
-  const [mode, setMode] = useState<Mode>("canvas");
+  const [mode, setMode] = useState<Mode>(() => {
+    if (typeof window !== "undefined" && window.location.hash === "#browse") return "browse";
+    return "canvas";
+  });
   const [filters, setFilters] = useState<FilterState>({
     ...EMPTY_FILTER,
     formats: new Set(),
@@ -106,6 +109,7 @@ export default function Museum() {
 
   const enterBrowse = useCallback(() => {
     setMode("entering-browse");
+    window.history.pushState(null, "", "#browse");
     setTimeout(() => setMode("browse"), TRANSITION_MS);
   }, []);
 
@@ -116,6 +120,23 @@ export default function Museum() {
       setMode("canvas");
       setFilters({ ...EMPTY_FILTER, formats: new Set(), decades: new Set() });
     }, TRANSITION_MS);
+    // Remove the hash without adding a history entry
+    window.history.replaceState(null, "", window.location.pathname);
+  }, [mode]);
+
+  // Handle browser back button: #browse -> no hash means leave browse
+  useEffect(() => {
+    const onPopState = () => {
+      if (window.location.hash !== "#browse" && mode === "browse") {
+        setMode("leaving-browse");
+        setTimeout(() => {
+          setMode("canvas");
+          setFilters({ ...EMPTY_FILTER, formats: new Set(), decades: new Set() });
+        }, TRANSITION_MS);
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
   }, [mode]);
 
   // Register leaveBrowse so navbar logo can trigger it
