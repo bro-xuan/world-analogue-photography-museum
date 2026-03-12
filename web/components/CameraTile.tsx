@@ -10,18 +10,23 @@ interface CameraTileProps {
 export default function CameraTile({ camera, hasDetail, browse }: CameraTileProps) {
   const content = (
     <>
-      <div className="aspect-square bg-neutral-100 rounded overflow-hidden">
+      <div className="aspect-square rounded overflow-hidden flex items-center justify-center">
         <img
           src={camera.thumb ? `/images/${camera.thumb}` : `/images/${camera.image}`}
           alt={camera.name}
           loading="lazy"
           draggable={false}
-          className="w-full h-full object-contain select-none"
+          className="max-w-full max-h-full object-contain select-none"
         />
       </div>
-      <p className="text-[max(10px,1.1vh)] text-neutral-400 mt-1 leading-tight truncate text-center">
+      <p className="text-neutral-400 mt-1 leading-tight truncate text-center" style={{ fontSize: "max(13px, 1.2vh)" }}>
         {camera.name}
       </p>
+      {browse && camera.year && (
+        <p className="text-neutral-300 leading-tight truncate text-center" style={{ fontSize: "max(12px, 1.1vh)" }}>
+          {camera.year}
+        </p>
+      )}
     </>
   );
 

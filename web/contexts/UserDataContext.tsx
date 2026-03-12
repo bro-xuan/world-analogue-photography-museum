@@ -74,7 +74,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
         setFavorites(new Set());
         setWishlist(new Set());
       }
-    });
+    }).catch(console.error);
   }, [user]);
 
   const toggleOwn = useCallback(
@@ -93,7 +93,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
 
       updateDoc(ref, {
         owned: has ? arrayRemove(id) : arrayUnion(id),
-      });
+      }).catch(console.error);
     },
     [user, owned]
   );
@@ -114,7 +114,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
 
       updateDoc(ref, {
         favorites: has ? arrayRemove(id) : arrayUnion(id),
-      });
+      }).catch(console.error);
     },
     [user, favorites]
   );
@@ -134,7 +134,7 @@ export function UserDataProvider({ children }: { children: ReactNode }) {
 
       updateDoc(ref, {
         wishlist: has ? arrayRemove(id) : arrayUnion(id),
-      });
+      }).catch(console.error);
     },
     [user, wishlist]
   );

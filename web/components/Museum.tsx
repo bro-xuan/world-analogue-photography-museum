@@ -163,8 +163,8 @@ export default function Museum() {
       {/* Browse mode */}
       {showBrowse && (
         <div
-          className="fixed top-11 left-0 right-0 bottom-0 bg-white z-40 overflow-y-auto"
-          style={browseStyle}
+          className="fixed left-0 right-0 bottom-0 bg-white z-40 overflow-y-auto"
+          style={{ top: "max(60px, 6.5vh)", ...browseStyle }}
         >
           <FilterBar
             filters={filters}
@@ -177,7 +177,7 @@ export default function Museum() {
             decades={filterOptions.decades}
           />
           {/* Grid with top padding for filter bar */}
-          <div className="pt-28 md:pt-24">
+          <div style={{ paddingTop: "max(8px, 0.7vh)" }}>
             <BrowseGrid cameras={filteredCameras} />
           </div>
         </div>

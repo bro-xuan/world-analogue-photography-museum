@@ -36,7 +36,7 @@ export default function BrowseGrid({ cameras }: BrowseGridProps) {
       <div
         className="grid gap-4 px-4 pb-4"
         style={{
-          gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fill, minmax(max(180px, 14vh), 1fr))",
         }}
       >
         {visible.map((camera) => (
@@ -46,10 +46,14 @@ export default function BrowseGrid({ cameras }: BrowseGridProps) {
         ))}
       </div>
       {hasMore && (
-        <div className="flex justify-center pb-8">
+        <div className="flex justify-center" style={{ padding: "max(24px, 2.2vh) 0 max(32px, 3vh)" }}>
           <button
             onClick={loadMore}
-            className="px-6 py-2 text-sm font-medium text-neutral-700 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors"
+            className="font-medium text-neutral-700 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors"
+            style={{
+              padding: "max(10px, 1vh) max(24px, 2.2vh)",
+              fontSize: "max(14px, 1.4vh)",
+            }}
           >
             Load more ({cameras.length - visibleCount} remaining)
           </button>

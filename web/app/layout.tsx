@@ -18,6 +18,14 @@ export const metadata: Metadata = {
   title: "World Analogue Photography Museum",
   description:
     "A living museum of every analogue camera and film ever made. Browse thousands of cameras from hundreds of manufacturers.",
+  openGraph: {
+    type: "website",
+    title: "World Analogue Photography Museum",
+    description:
+      "A living museum of every analogue camera and film ever made. Browse thousands of cameras from hundreds of manufacturers.",
+    siteName: "World Analogue Photography Museum",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({

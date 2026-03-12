@@ -16,9 +16,13 @@ export async function generateMetadata({ params }: Props) {
   const data = await loadBrandsData();
   const brand = data.allBrands.find((b) => b.slug === slug);
   if (!brand) return { title: "Brand Not Found" };
+  const title = `${brand.name} — World Analogue Photography Museum`;
+  const description = `Browse ${brand.cameraCount} analogue cameras by ${brand.name}.`;
   return {
-    title: `${brand.name} — World Analogue Photography Museum`,
-    description: `Browse ${brand.cameraCount} analogue cameras by ${brand.name}.`,
+    title,
+    description,
+    openGraph: { title, description, type: "article" },
+    twitter: { card: "summary_large_image" as const },
   };
 }
 

@@ -140,9 +140,11 @@ export default function FreeCanvas({
     const heroCenterY =
       (heroRowStart - 1) * rowStep + (HERO_ROWS * rowStep - gap) / 2;
 
+    // Offset vertical center to account for navbar covering the top
+    const navbarHeight = Math.max(60, window.innerHeight * 0.055);
     pos.current = {
       x: -(heroCenterX - window.innerWidth / 2),
-      y: -(heroCenterY - window.innerHeight / 2),
+      y: -(heroCenterY - (navbarHeight + window.innerHeight) / 2),
     };
 
     // Apply initial transform so canvas is centered on hero
@@ -375,7 +377,7 @@ export default function FreeCanvas({
                       onBrowse?.();
                     }}
                     className="font-medium text-neutral-900 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer"
-                    style={{ padding: `${Math.round(cell * 0.04)}px ${Math.round(cell * 0.1)}px`, fontSize: Math.max(12, Math.round(cell * 0.07)) }}
+                    style={{ padding: `${Math.round(cell * 0.04)}px ${Math.round(cell * 0.1)}px`, fontSize: Math.max(14, Math.round(cell * 0.07)) }}
                   >
                     Browse collection &darr;
                   </button>
@@ -385,7 +387,7 @@ export default function FreeCanvas({
                       setShowStory(true);
                     }}
                     className="font-medium text-neutral-500 border border-neutral-200 rounded-full hover:bg-neutral-50 hover:text-neutral-700 transition-colors cursor-pointer"
-                    style={{ padding: `${Math.round(cell * 0.04)}px ${Math.round(cell * 0.1)}px`, fontSize: Math.max(12, Math.round(cell * 0.07)) }}
+                    style={{ padding: `${Math.round(cell * 0.04)}px ${Math.round(cell * 0.1)}px`, fontSize: Math.max(14, Math.round(cell * 0.07)) }}
                   >
                     Story behind
                   </button>
@@ -396,10 +398,10 @@ export default function FreeCanvas({
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
-                  className="text-neutral-400 hover:text-neutral-600 transition-colors flex items-center gap-1 cursor-pointer"
-                  style={{ fontSize: Math.max(10, Math.round(cell * 0.055)) }}
+                  className="font-medium text-neutral-400 hover:text-neutral-600 transition-colors flex items-center gap-1 cursor-pointer"
+                  style={{ fontSize: Math.max(14, Math.round(cell * 0.07)) }}
                 >
-                  <svg viewBox="0 0 24 24" className="w-3 h-3 fill-current" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+                  <svg viewBox="0 0 24 24" className="fill-current" style={{ width: Math.max(12, Math.round(cell * 0.06)), height: Math.max(12, Math.round(cell * 0.06)) }} aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
                   by @Erc721_stefan
                 </a>
               </div>
@@ -420,25 +422,26 @@ export default function FreeCanvas({
         >
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div
-            className="relative bg-white max-w-lg w-full mx-4 p-10 md:p-14 max-h-[85vh] overflow-y-auto"
+            className="relative bg-white w-full mx-4 max-h-[85vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
-            style={{ animation: "story-in 0.3s ease-out" }}
+            style={{ animation: "story-in 0.3s ease-out", maxWidth: Math.max(540, Math.round(cell * 3.2)), padding: `${Math.max(32, Math.round(cell * 0.14))}px ${Math.max(36, Math.round(cell * 0.16))}px` }}
           >
             <button
               onClick={() => setShowStory(false)}
-              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-neutral-400 hover:text-neutral-700 transition-colors cursor-pointer"
+              className="absolute top-4 right-4 flex items-center justify-center text-neutral-400 hover:text-neutral-700 transition-colors cursor-pointer"
               aria-label="Close"
+              style={{ width: Math.max(32, Math.round(cell * 0.15)), height: Math.max(32, Math.round(cell * 0.15)) }}
             >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ width: Math.max(16, Math.round(cell * 0.08)), height: Math.max(16, Math.round(cell * 0.08)) }}>
                 <path d="M4 4l8 8M12 4l-8 8" />
               </svg>
             </button>
 
-            <p className="text-[10px] tracking-[0.3em] uppercase text-neutral-400 mb-6">
+            <p className="tracking-[0.3em] uppercase text-neutral-400" style={{ fontSize: Math.max(13, Math.round(cell * 0.065)), marginBottom: Math.max(24, Math.round(cell * 0.12)) }}>
               The story behind
             </p>
 
-            <div className="space-y-5 text-[15px] leading-relaxed text-neutral-600">
+            <div className="leading-relaxed text-neutral-600" style={{ fontSize: Math.max(17, Math.round(cell * 0.09)), display: "flex", flexDirection: "column", gap: Math.max(18, Math.round(cell * 0.09)) }}>
               <p>
                 First year of college, I blew my entire scholarship on a Canon 70D.
                 No regrets. I got obsessed, signed with Getty Images, won some awards,
@@ -463,20 +466,21 @@ export default function FreeCanvas({
                 selling back to China.
               </p>
 
-              <p className="text-neutral-900 pt-2">
+              <p className="text-neutral-900" style={{ paddingTop: Math.max(6, Math.round(cell * 0.03)) }}>
                 This is the museum I wished existed. Every camera catalogued, every
                 format represented. If you enjoyed browsing, consider buying me a coffee.
               </p>
             </div>
 
-            <div className="mt-8 flex justify-center">
+            <div className="flex justify-center" style={{ marginTop: Math.max(30, Math.round(cell * 0.14)) }}>
               <a
                 href="/support"
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-2.5 px-5 py-2.5 text-sm font-medium text-neutral-700 bg-white border border-neutral-200 rounded-full hover:border-neutral-400 transition-colors cursor-pointer"
+                className="inline-flex items-center font-medium text-neutral-700 bg-white border border-neutral-200 rounded-full hover:border-neutral-400 transition-colors cursor-pointer"
+                style={{ fontSize: Math.max(14, Math.round(cell * 0.07)), padding: `${Math.round(cell * 0.04)}px ${Math.round(cell * 0.1)}px`, gap: Math.max(8, Math.round(cell * 0.04)) }}
               >
-                <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="" width="20" height="20" />
+                <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="" width="24" height="24" />
                 Buy me a coffee
               </a>
             </div>

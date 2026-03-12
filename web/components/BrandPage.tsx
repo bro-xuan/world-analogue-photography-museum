@@ -51,11 +51,16 @@ export default function BrandPage({ brand }: { brand: BrandEntry }) {
         ? `${brand.yearStart}`
         : null;
 
+  const pagePad = "max(24px, 2.2vw)";
+
   return (
     <div className="min-h-screen bg-white">
-      <main className="max-w-6xl mx-auto px-6 pt-8 pb-16">
+      <main style={{ padding: `max(32px, 3vh) ${pagePad} max(64px, 6vh)` }}>
         {/* Breadcrumb */}
-        <div className="flex items-center gap-1.5 text-sm mb-6">
+        <div
+          className="flex items-center"
+          style={{ gap: "max(6px, 0.6vh)", fontSize: "max(14px, 1.3vh)", marginBottom: "max(24px, 2.2vh)" }}
+        >
           <Link href="/brands" className="text-neutral-400 hover:text-neutral-900 transition-colors">
             Brands
           </Link>
@@ -65,18 +70,22 @@ export default function BrandPage({ brand }: { brand: BrandEntry }) {
         {/* Brand header */}
         <div>
           {brand.logo && (
-            <div className="h-8 mb-3">
+            <div style={{ height: "max(56px, 5.5vh)", marginBottom: "max(16px, 1.5vh)" }}>
               <img
                 src={`/${brand.logo}`}
                 alt=""
-                className="max-h-full max-w-[200px] object-contain"
+                className="max-h-full object-contain"
+                style={{ maxWidth: "max(200px, 18vh)" }}
               />
             </div>
           )}
-          <h1 className="font-display text-3xl md:text-4xl font-bold text-neutral-900">
+          <h1
+            className="font-display font-bold text-neutral-900 leading-tight"
+            style={{ fontSize: "max(32px, 3.2vh)" }}
+          >
             {brand.name}
           </h1>
-          <p className="mt-2 text-sm text-neutral-400">
+          <p className="text-neutral-400" style={{ marginTop: "max(8px, 0.7vh)", fontSize: "max(15px, 1.4vh)" }}>
             {brand.country && <>{brand.country} &middot; </>}
             {brand.cameraCount} camera{brand.cameraCount !== 1 ? "s" : ""}
             {yearRange && <> &middot; {yearRange}</>}
@@ -84,16 +93,20 @@ export default function BrandPage({ brand }: { brand: BrandEntry }) {
         </div>
 
         {/* Camera grid grouped by decade */}
-        <div className="mt-8">
+        <div style={{ marginTop: "max(32px, 3vh)" }}>
           {decades.map(([decade, cameras]) => (
-            <section key={decade} className="mb-8">
-              <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
+            <section key={decade} style={{ marginBottom: "max(32px, 3vh)" }}>
+              <h2
+                className="font-semibold text-neutral-400 uppercase"
+                style={{ fontSize: "max(13px, 1.2vh)", letterSpacing: "0.05em", marginBottom: "max(14px, 1.3vh)" }}
+              >
                 {decade}
               </h2>
               <div
-                className="grid gap-4"
+                className="grid"
                 style={{
-                  gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(max(130px, 11vh), 1fr))",
+                  gap: "max(16px, 1.5vh)",
                 }}
               >
                 {cameras.map((cam) => (
@@ -110,10 +123,11 @@ export default function BrandPage({ brand }: { brand: BrandEntry }) {
         </div>
 
         {hasMore && (
-          <div className="flex justify-center pb-8">
+          <div className="flex justify-center" style={{ paddingBottom: "max(32px, 3vh)" }}>
             <button
               onClick={loadMore}
-              className="px-6 py-2 text-sm font-medium text-neutral-700 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer"
+              className="font-medium text-neutral-700 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer"
+              style={{ padding: "max(8px, 0.75vh) max(24px, 2.2vh)", fontSize: "max(14px, 1.3vh)" }}
             >
               Load more ({brand.cameras.length - visibleCount} remaining)
             </button>

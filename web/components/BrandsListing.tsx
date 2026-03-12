@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { BrandsData, BrandRegion } from "@/lib/brands";
+import { BrandsData } from "@/lib/brands";
 import { fetchBrandsData } from "@/lib/brands";
 import BrandTile from "./BrandTile";
 
@@ -11,34 +11,25 @@ export default function BrandsListing() {
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchBrandsData().then(setData);
+    fetchBrandsData().then(setData).catch(console.error);
   }, []);
 
-  const visibleRegions = useMemo(() => {
+  const visibleBrands = useMemo(() => {
     if (!data) return [];
-    const q = search.toLowerCase();
+    let brands = data.allBrands;
 
     if (activeRegion) {
       const region = data.regions.find((r) => r.name === activeRegion);
       if (!region) return [];
-      const brands = q
-        ? region.brands.filter((b) => b.name.toLowerCase().includes(q))
-        : region.brands;
-      return brands.length > 0
-        ? [{ ...region, brands, count: brands.length }]
-        : [];
+      brands = region.brands;
     }
 
-    if (q) {
-      const filtered = data.allBrands.filter((b) =>
-        b.name.toLowerCase().includes(q)
-      );
-      return filtered.length > 0
-        ? [{ name: "Results", count: filtered.length, brands: filtered }]
-        : [];
+    if (search) {
+      const q = search.toLowerCase();
+      brands = brands.filter((b) => b.name.toLowerCase().includes(q));
     }
 
-    return data.regions;
+    return brands;
   }, [data, search, activeRegion]);
 
   if (!data) {
@@ -49,119 +40,124 @@ export default function BrandsListing() {
     );
   }
 
+  const fs = {
+    title: "max(36px, 3.8vh)",
+    subtitle: "max(16px, 1.5vh)",
+    label: "max(12px, 1.15vh)",
+    pill: "max(14px, 1.35vh)",
+    pillPad: "max(6px, 0.55vh) max(16px, 1.5vh)",
+    search: "max(15px, 1.4vh)",
+    pagePad: "max(24px, 2.2vw)",
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="bg-neutral-50 border-b border-neutral-200">
-        <div className="max-w-6xl mx-auto px-6 pt-10 pb-8">
-          <p className="text-xs font-semibold tracking-widest text-neutral-400 uppercase mb-2">
-            Archive
-          </p>
-          <h1 className="font-display text-4xl md:text-5xl font-bold text-neutral-900">
-            Camera Brands
-          </h1>
-          <p className="mt-1 text-lg text-neutral-400">
-            {data.meta.total} manufacturers
-          </p>
-        </div>
+      <div style={{ padding: `max(40px, 4vh) ${fs.pagePad} max(16px, 1.5vh)` }}>
+        <h1
+          className="font-display font-bold text-neutral-900 leading-tight"
+          style={{ fontSize: fs.title }}
+        >
+          Camera Brands
+        </h1>
+        <p className="text-neutral-400" style={{ fontSize: fs.subtitle, marginTop: "max(4px, 0.4vh)" }}>
+          {data.meta.total} manufacturers
+        </p>
       </div>
 
       {/* Filters */}
-      <div className="border-b border-neutral-200">
-        <div className="max-w-6xl mx-auto px-6 py-4 space-y-3">
-          <div className="flex gap-2 flex-wrap">
+      <div className="border-b border-neutral-100" style={{ padding: `0 ${fs.pagePad} max(20px, 1.8vh)` }}>
+        <div className="flex flex-wrap" style={{ gap: "max(8px, 0.7vh)", marginBottom: "max(14px, 1.3vh)" }}>
+          <button
+            onClick={() => setActiveRegion(null)}
+            className={`rounded-full border transition-colors cursor-pointer ${
+              activeRegion === null
+                ? "bg-neutral-900 text-white border-neutral-900"
+                : "text-neutral-500 border-neutral-200 hover:border-neutral-400"
+            }`}
+            style={{ padding: fs.pillPad, fontSize: fs.pill }}
+          >
+            All{" "}
+            <span className={activeRegion === null ? "text-neutral-400" : "text-neutral-300"}>
+              {data.meta.total}
+            </span>
+          </button>
+          {data.regions.map((region) => (
             <button
-              onClick={() => setActiveRegion(null)}
-              className={`px-3.5 py-1.5 text-sm rounded-full border transition-colors cursor-pointer ${
-                activeRegion === null
+              key={region.name}
+              onClick={() =>
+                setActiveRegion(
+                  activeRegion === region.name ? null : region.name
+                )
+              }
+              className={`rounded-full border transition-colors cursor-pointer ${
+                activeRegion === region.name
                   ? "bg-neutral-900 text-white border-neutral-900"
                   : "text-neutral-500 border-neutral-200 hover:border-neutral-400"
               }`}
+              style={{ padding: fs.pillPad, fontSize: fs.pill }}
             >
-              All{" "}
-              <span className={activeRegion === null ? "text-neutral-400" : "text-neutral-300"}>
-                {data.meta.total}
+              {region.name}{" "}
+              <span
+                className={
+                  activeRegion === region.name
+                    ? "text-neutral-400"
+                    : "text-neutral-300"
+                }
+              >
+                {region.count}
               </span>
             </button>
-            {data.regions.map((region) => (
-              <button
-                key={region.name}
-                onClick={() =>
-                  setActiveRegion(
-                    activeRegion === region.name ? null : region.name
-                  )
-                }
-                className={`px-3.5 py-1.5 text-sm rounded-full border transition-colors cursor-pointer ${
-                  activeRegion === region.name
-                    ? "bg-neutral-900 text-white border-neutral-900"
-                    : "text-neutral-500 border-neutral-200 hover:border-neutral-400"
-                }`}
-              >
-                {region.name}{" "}
-                <span
-                  className={
-                    activeRegion === region.name
-                      ? "text-neutral-400"
-                      : "text-neutral-300"
-                  }
-                >
-                  {region.count}
-                </span>
-              </button>
-            ))}
-          </div>
+          ))}
+        </div>
 
-          <div className="relative max-w-sm">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-300"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <circle cx="11" cy="11" r="8" strokeWidth="2" />
-              <path d="m21 21-4.35-4.35" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search brands..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm border border-neutral-200 rounded-lg outline-none focus:border-neutral-400 transition-colors"
-            />
-          </div>
+        <div className="relative" style={{ maxWidth: "max(360px, 30vw)" }}>
+          <svg
+            className="absolute top-1/2 -translate-y-1/2 text-neutral-300"
+            style={{ left: "max(12px, 1.1vh)", width: "max(16px, 1.5vh)", height: "max(16px, 1.5vh)" }}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <circle cx="11" cy="11" r="8" strokeWidth="2" />
+            <path d="m21 21-4.35-4.35" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search brands..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full border border-neutral-200 rounded-lg outline-none focus:border-neutral-400 transition-colors"
+            style={{
+              paddingLeft: "max(36px, 3.4vh)",
+              paddingRight: "max(16px, 1.5vh)",
+              paddingTop: "max(8px, 0.75vh)",
+              paddingBottom: "max(8px, 0.75vh)",
+              fontSize: fs.search,
+            }}
+          />
         </div>
       </div>
 
       {/* Brand grid */}
-      <main className="max-w-6xl mx-auto px-6 pt-8 pb-16">
-        {visibleRegions.length === 0 ? (
-          <p className="text-neutral-400 text-center py-16">
+      <main style={{ padding: `max(32px, 3vh) ${fs.pagePad} max(64px, 6vh)` }}>
+        {visibleBrands.length === 0 ? (
+          <p className="text-neutral-400 text-center" style={{ padding: "max(64px, 6vh) 0", fontSize: fs.subtitle }}>
             No brands match your search
           </p>
         ) : (
-          visibleRegions.map((region) => (
-            <section key={region.name} className="mb-12">
-              <div className="flex items-baseline gap-3 mb-5">
-                <h2 className="text-lg font-semibold text-neutral-900">
-                  {region.name}
-                </h2>
-                <span className="text-sm text-neutral-300">
-                  {region.count}
-                </span>
-              </div>
-              <div
-                className="grid gap-x-4 gap-y-6"
-                style={{
-                  gridTemplateColumns:
-                    "repeat(auto-fill, minmax(140px, 1fr))",
-                }}
-              >
-                {region.brands.map((brand) => (
-                  <BrandTile key={brand.slug} brand={brand} />
-                ))}
-              </div>
-            </section>
-          ))
+          <div
+            className="grid"
+            style={{
+              gridTemplateColumns:
+                "repeat(auto-fill, minmax(max(120px, 10vh), 1fr))",
+              gap: "max(20px, 1.8vh) max(16px, 1.4vh)",
+            }}
+          >
+            {visibleBrands.map((brand) => (
+              <BrandTile key={brand.slug} brand={brand} />
+            ))}
+          </div>
         )}
       </main>
     </div>

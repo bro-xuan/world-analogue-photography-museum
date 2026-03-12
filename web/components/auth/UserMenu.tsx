@@ -26,7 +26,7 @@ export default function UserMenu() {
       <button
         onClick={() => setOpen(!open)}
         className="rounded-full overflow-hidden border-2 border-transparent hover:border-neutral-300 transition-colors cursor-pointer"
-        style={{ width: "max(32px, 3vh)", height: "max(32px, 3vh)" }}
+        style={{ width: "max(36px, 3.5vh)", height: "max(36px, 3.5vh)" }}
       >
         {user.photoURL ? (
           <img
@@ -43,17 +43,35 @@ export default function UserMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-50">
-          <div className="px-3 py-2 border-b border-neutral-100">
-            <p className="text-sm font-medium text-neutral-900 truncate">
+        <div
+          className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-neutral-200 z-50"
+          style={{ width: "max(200px, 18vh)", padding: "max(4px, 0.4vh) 0" }}
+        >
+          <div
+            className="border-b border-neutral-100"
+            style={{ padding: "max(8px, 0.8vh) max(14px, 1.2vh)" }}
+          >
+            <p
+              className="font-medium text-neutral-900 truncate"
+              style={{ fontSize: "max(14px, 1.4vh)" }}
+            >
               {user.displayName}
             </p>
-            <p className="text-xs text-neutral-400 truncate">{user.email}</p>
+            <p
+              className="text-neutral-400 truncate"
+              style={{ fontSize: "max(12px, 1.1vh)" }}
+            >
+              {user.email}
+            </p>
           </div>
           <Link
             href="/profile"
             onClick={() => setOpen(false)}
-            className="block px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+            className="block text-neutral-700 hover:bg-neutral-50"
+            style={{
+              padding: "max(8px, 0.8vh) max(14px, 1.2vh)",
+              fontSize: "max(14px, 1.4vh)",
+            }}
           >
             My Collection
           </Link>
@@ -62,7 +80,11 @@ export default function UserMenu() {
               setOpen(false);
               signOut();
             }}
-            className="w-full text-left px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 cursor-pointer"
+            className="w-full text-left text-neutral-700 hover:bg-neutral-50 cursor-pointer"
+            style={{
+              padding: "max(8px, 0.8vh) max(14px, 1.2vh)",
+              fontSize: "max(14px, 1.4vh)",
+            }}
           >
             Sign out
           </button>

@@ -11,7 +11,10 @@ export default function BrandTile({ brand }: BrandTileProps) {
       href={`/brands/${brand.slug}`}
       className="block group"
     >
-      <div className="aspect-square border border-neutral-200 rounded-lg flex items-center justify-center p-5 group-hover:border-neutral-300 transition-colors bg-white">
+      <div
+        className="aspect-square border border-neutral-200 rounded-lg flex items-center justify-center group-hover:border-neutral-300 transition-colors bg-white"
+        style={{ padding: "max(12px, 1.1vh)" }}
+      >
         {brand.logo ? (
           <img
             src={`/${brand.logo}`}
@@ -20,20 +23,22 @@ export default function BrandTile({ brand }: BrandTileProps) {
             className="max-h-full max-w-full object-contain"
           />
         ) : (
-          <span className="text-lg font-semibold text-neutral-800 font-display text-center leading-tight">
+          <span
+            className="font-semibold text-neutral-800 font-display text-center leading-tight"
+            style={{ fontSize: "max(14px, 1.3vh)" }}
+          >
             {brand.name}
           </span>
         )}
       </div>
-      <div className="mt-2 flex items-baseline justify-between gap-2">
-        <p className="text-sm font-medium text-neutral-800 truncate">
+      <div className="flex items-baseline justify-between" style={{ marginTop: "max(6px, 0.55vh)", gap: "max(6px, 0.5vh)" }}>
+        <p className="font-medium text-neutral-800 truncate" style={{ fontSize: "max(13px, 1.2vh)" }}>
           {brand.name}
         </p>
-        <span className="text-sm text-red-400 tabular-nums flex-shrink-0">
+        <span className="text-red-400 tabular-nums flex-shrink-0" style={{ fontSize: "max(13px, 1.2vh)" }}>
           {brand.cameraCount}
         </span>
       </div>
-      <p className="text-xs text-neutral-400">{brand.slug}</p>
     </Link>
   );
 }

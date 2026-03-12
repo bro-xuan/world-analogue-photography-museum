@@ -19,18 +19,27 @@ export default function CollectionButtons({ cameraId }: { cameraId: string }) {
     action();
   };
 
+  const btnStyle = {
+    padding: "max(6px, 0.6vh) max(16px, 1.5vh)",
+    fontSize: "max(14px, 1.3vh)",
+    gap: "max(6px, 0.6vh)",
+  };
+
+  const iconStyle = { width: "max(16px, 1.5vh)", height: "max(16px, 1.5vh)" };
+
   return (
-    <div className="flex gap-2 mt-4">
+    <div className="flex" style={{ gap: "max(8px, 0.7vh)", marginTop: "max(16px, 1.5vh)" }}>
       <button
         onClick={() => handle(() => toggleFavorite(cameraId))}
-        className={`flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-full border transition-colors cursor-pointer ${
+        className={`flex items-center font-medium rounded-full border transition-colors cursor-pointer ${
           isFavorite
             ? "bg-neutral-900 text-white border-neutral-900"
             : "text-neutral-600 border-neutral-200 hover:bg-neutral-50"
         }`}
+        style={btnStyle}
       >
         <svg
-          className="w-4 h-4"
+          style={iconStyle}
           viewBox="0 0 24 24"
           fill={isFavorite ? "currentColor" : "none"}
           stroke="currentColor"
@@ -45,14 +54,15 @@ export default function CollectionButtons({ cameraId }: { cameraId: string }) {
 
       <button
         onClick={() => handle(() => toggleOwn(cameraId))}
-        className={`flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-full border transition-colors cursor-pointer ${
+        className={`flex items-center font-medium rounded-full border transition-colors cursor-pointer ${
           isOwned
             ? "bg-neutral-900 text-white border-neutral-900"
             : "text-neutral-600 border-neutral-200 hover:bg-neutral-50"
         }`}
+        style={btnStyle}
       >
         <svg
-          className="w-4 h-4"
+          style={iconStyle}
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -67,14 +77,15 @@ export default function CollectionButtons({ cameraId }: { cameraId: string }) {
 
       <button
         onClick={() => handle(() => toggleWishlist(cameraId))}
-        className={`flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-full border transition-colors cursor-pointer ${
+        className={`flex items-center font-medium rounded-full border transition-colors cursor-pointer ${
           isWishlist
             ? "bg-neutral-900 text-white border-neutral-900"
             : "text-neutral-600 border-neutral-200 hover:bg-neutral-50"
         }`}
+        style={btnStyle}
       >
         <svg
-          className="w-4 h-4"
+          style={iconStyle}
           viewBox="0 0 24 24"
           fill={isWishlist ? "currentColor" : "none"}
           stroke="currentColor"

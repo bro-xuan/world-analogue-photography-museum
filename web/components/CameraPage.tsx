@@ -34,15 +34,26 @@ const RATING_LABELS: Record<string, string> = {
 
 function RatingBar({ label, score }: { label: string; score: number }) {
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-sm text-neutral-500 w-40 shrink-0">{label}</span>
-      <div className="flex-1 h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+    <div className="flex items-center" style={{ gap: "max(12px, 1.1vh)" }}>
+      <span
+        className="text-neutral-500 shrink-0"
+        style={{ fontSize: "max(14px, 1.3vh)", width: "max(160px, 14vh)" }}
+      >
+        {label}
+      </span>
+      <div
+        className="flex-1 bg-neutral-100 rounded-full overflow-hidden"
+        style={{ height: "max(6px, 0.55vh)" }}
+      >
         <div
           className="h-full bg-neutral-800 rounded-full"
           style={{ width: `${(score / 5) * 100}%` }}
         />
       </div>
-      <span className="text-sm font-medium text-neutral-700 w-8 text-right tabular-nums">
+      <span
+        className="font-medium text-neutral-700 text-right tabular-nums"
+        style={{ fontSize: "max(14px, 1.3vh)", width: "max(32px, 3vh)" }}
+      >
         {score.toFixed(1)}
       </span>
     </div>
@@ -83,9 +94,18 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
 
   return (
     <div className="min-h-screen bg-white">
-      <main className="max-w-6xl mx-auto px-6 pt-8 pb-16">
+      <main
+        className="mx-auto"
+        style={{
+          maxWidth: "max(900px, 75vw)",
+          padding: "max(32px, 3vh) max(24px, 2vw) max(64px, 6vh)",
+        }}
+      >
         {/* Breadcrumb */}
-        <div className="flex items-center gap-1.5 text-sm mb-6">
+        <div
+          className="flex items-center"
+          style={{ gap: "max(6px, 0.6vh)", fontSize: "max(14px, 1.3vh)", marginBottom: "max(24px, 2.2vh)" }}
+        >
           <Link
             href={`/brands/${camera.manufacturer.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`}
             className="text-neutral-400 hover:text-neutral-900 transition-colors"
@@ -95,35 +115,42 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
           <span className="text-neutral-300">/</span>
           <span className="text-neutral-600 truncate">{camera.name}</span>
         </div>
-        {/* Mobile: 4 grid items reordered via order. Desktop: 2-col with left sticky. */}
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] lg:grid-cols-[5fr_6fr] gap-10 md:gap-14">
-          {/* Image + thumbnails — order 1 on mobile, left column on desktop */}
-          <div className="order-1 md:sticky md:top-20 md:self-start md:row-span-3">
-            <div className="aspect-square bg-neutral-50 rounded-xl overflow-hidden flex items-center justify-center">
+
+        {/* Main grid */}
+        <div
+          className="grid grid-cols-1 md:grid-cols-[1fr_1fr] lg:grid-cols-[5fr_6fr]"
+          style={{ gap: "max(40px, 3.5vh) max(56px, 4vh)" }}
+        >
+          {/* Image + thumbnails */}
+          <div className="order-1 md:sticky md:self-start md:row-span-3" style={{ top: "max(80px, 7vh)" }}>
+            <div className="flex items-center justify-center">
               {validImages.length > 0 ? (
                 <img
                   src={`/images/${validImages[safeActive]}`}
                   alt={camera.name}
-                  className="max-w-full max-h-full object-contain"
+                  className="w-full h-auto object-contain"
                   onError={() => handleImageError(validImages[safeActive])}
                 />
               ) : (
-                <div className="text-neutral-300 text-sm">No image available</div>
+                <div className="aspect-square w-full flex items-center justify-center text-neutral-300" style={{ fontSize: "max(14px, 1.3vh)" }}>
+                  No image available
+                </div>
               )}
             </div>
 
             {/* Thumbnail strip */}
             {validImages.length > 1 && (
-              <div className="flex gap-2 mt-3">
+              <div className="flex" style={{ gap: "max(8px, 0.7vh)", marginTop: "max(12px, 1.1vh)" }}>
                 {validImages.map((img, i) => (
                   <button
                     key={img}
                     onClick={() => setActiveImage(i)}
-                    className={`w-14 h-14 rounded-lg overflow-hidden border-2 transition-colors cursor-pointer ${
+                    className={`rounded-lg overflow-hidden border-2 transition-colors cursor-pointer ${
                       i === safeActive
                         ? "border-neutral-900"
                         : "border-transparent hover:border-neutral-300"
                     }`}
+                    style={{ width: "max(56px, 5vh)", height: "max(56px, 5vh)" }}
                   >
                     <img
                       src={`/images/${img}`}
@@ -136,43 +163,52 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
               </div>
             )}
 
-            {/* Pricing — under photo (desktop), reordered on mobile */}
+            {/* Pricing — under photo on desktop */}
             {hasPricing && (
-              <div className="hidden md:block mt-6">
-                <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
+              <div className="hidden md:block" style={{ marginTop: "max(24px, 2.2vh)" }}>
+                <h2
+                  className="font-semibold text-neutral-400 uppercase"
+                  style={{ fontSize: "max(13px, 1.2vh)", letterSpacing: "0.05em", marginBottom: "max(12px, 1.1vh)" }}
+                >
                   Pricing
                 </h2>
-                <div className="flex gap-3 flex-wrap">
+                <div className="flex flex-wrap" style={{ gap: "max(12px, 1.1vh)" }}>
                   {camera.priceMarket != null && (
-                    <div className="px-4 py-2.5 bg-neutral-50 rounded-lg">
-                      <div className="text-[11px] text-neutral-400 uppercase tracking-wide">
+                    <div className="bg-neutral-50 rounded-lg" style={{ padding: "max(10px, 1vh) max(16px, 1.5vh)" }}>
+                      <div className="text-neutral-400 uppercase" style={{ fontSize: "max(12px, 1.1vh)", letterSpacing: "0.04em" }}>
                         Market Value
                       </div>
-                      <div className="text-lg font-semibold text-neutral-800 mt-0.5">
+                      <div
+                        className="font-semibold text-neutral-800"
+                        style={{ fontSize: "max(18px, 1.8vh)", marginTop: "max(2px, 0.2vh)" }}
+                      >
                         ~${camera.priceMarket.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </div>
                       {camera.priceMarketSource && (
-                        <div className="text-[10px] text-neutral-400 mt-0.5">
+                        <div className="text-neutral-400" style={{ fontSize: "max(12px, 1.1vh)", marginTop: "max(2px, 0.2vh)" }}>
                           {PRICE_SOURCE_LABELS[camera.priceMarketSource] || camera.priceMarketSource}
                         </div>
                       )}
                     </div>
                   )}
                   {camera.priceLaunch != null && (
-                    <div className="px-4 py-2.5 bg-neutral-50 rounded-lg">
-                      <div className="text-[11px] text-neutral-400 uppercase tracking-wide">
+                    <div className="bg-neutral-50 rounded-lg" style={{ padding: "max(10px, 1vh) max(16px, 1.5vh)" }}>
+                      <div className="text-neutral-400 uppercase" style={{ fontSize: "max(12px, 1.1vh)", letterSpacing: "0.04em" }}>
                         Launch Price{camera.year ? ` (${camera.year})` : ""}
                       </div>
-                      <div className="text-lg font-semibold text-neutral-800 mt-0.5">
+                      <div
+                        className="font-semibold text-neutral-800"
+                        style={{ fontSize: "max(18px, 1.8vh)", marginTop: "max(2px, 0.2vh)" }}
+                      >
                         ${camera.priceLaunch.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                       </div>
                       {camera.priceAdjusted != null && (
-                        <div className="text-xs text-neutral-400 mt-0.5">
+                        <div className="text-neutral-400" style={{ fontSize: "max(12px, 1.1vh)", marginTop: "max(2px, 0.2vh)" }}>
                           ≈ ${camera.priceAdjusted.toLocaleString("en-US")} today
                         </div>
                       )}
                       {camera.priceLaunchSource && (
-                        <div className="text-[10px] text-neutral-400 mt-0.5">
+                        <div className="text-neutral-400" style={{ fontSize: "max(12px, 1.1vh)", marginTop: "max(2px, 0.2vh)" }}>
                           {PRICE_SOURCE_LABELS[camera.priceLaunchSource] || camera.priceLaunchSource}
                         </div>
                       )}
@@ -183,15 +219,17 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
             )}
           </div>
 
-          {/* Right column: name → description → specs — order 2 on mobile */}
+          {/* Right column: name → description → specs */}
           <div className="order-2">
             {/* Header */}
             <div>
-              <h1 className="font-display text-3xl md:text-4xl font-bold text-neutral-900 leading-tight">
+              <h1
+                className="font-display font-bold text-neutral-900 leading-tight"
+                style={{ fontSize: "max(28px, 2.8vh)" }}
+              >
                 {camera.name}
               </h1>
-
-              <p className="mt-2 text-sm text-neutral-400">
+              <p className="text-neutral-400" style={{ marginTop: "max(8px, 0.7vh)", fontSize: "max(14px, 1.3vh)" }}>
                 {camera.manufacturer}
                 {metaParts.length > 0 && <> &middot; {metaParts.join(" · ")}</>}
               </p>
@@ -199,11 +237,14 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
 
             <CollectionButtons cameraId={cameraId} />
 
-            {/* Description — scrollable, fixed height */}
+            {/* Description */}
             {camera.description && (
-              <div className="mt-6">
-                <div className="max-h-60 overflow-y-auto pr-2 overscroll-contain">
-                  <div className="text-[15px] text-neutral-600 leading-relaxed space-y-4">
+              <div style={{ marginTop: "max(24px, 2.2vh)" }}>
+                <div
+                  className="overflow-y-auto pr-2 overscroll-contain"
+                  style={{ maxHeight: "max(240px, 22vh)" }}
+                >
+                  <div className="text-neutral-600 leading-relaxed space-y-4" style={{ fontSize: "max(15px, 1.4vh)" }}>
                     {camera.description.split("\n\n").map((para, i) => (
                       <p key={i}>{para}</p>
                     ))}
@@ -214,22 +255,31 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
 
             {/* Specs */}
             {hasSpecs && (
-              <div className="mt-8">
-                <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
+              <div style={{ marginTop: "max(32px, 3vh)" }}>
+                <h2
+                  className="font-semibold text-neutral-400 uppercase"
+                  style={{ fontSize: "max(13px, 1.2vh)", letterSpacing: "0.05em", marginBottom: "max(12px, 1.1vh)" }}
+                >
                   Specifications
                 </h2>
                 <div className="border border-neutral-100 rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
+                  <table className="w-full" style={{ fontSize: "max(14px, 1.3vh)" }}>
                     <tbody>
                       {Object.entries(camera.specs!).map(([key, value], i) => (
                         <tr
                           key={key}
                           className={i % 2 === 0 ? "bg-neutral-50/50" : "bg-white"}
                         >
-                          <td className="px-4 py-2.5 text-neutral-400 font-medium w-2/5">
+                          <td
+                            className="text-neutral-400 font-medium w-2/5"
+                            style={{ padding: "max(10px, 0.9vh) max(16px, 1.4vh)" }}
+                          >
                             {SPEC_LABELS[key] || key}
                           </td>
-                          <td className="px-4 py-2.5 text-neutral-700">
+                          <td
+                            className="text-neutral-700"
+                            style={{ padding: "max(10px, 0.9vh) max(16px, 1.4vh)" }}
+                          >
                             {value}
                           </td>
                         </tr>
@@ -239,46 +289,54 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
                 </div>
               </div>
             )}
-
           </div>
 
-          {/* Pricing — mobile only, order 3 (between specs and ratings) */}
+          {/* Pricing — mobile only */}
           {hasPricing && (
             <div className="order-3 md:hidden">
-              <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
+              <h2
+                className="font-semibold text-neutral-400 uppercase"
+                style={{ fontSize: "max(13px, 1.2vh)", letterSpacing: "0.05em", marginBottom: "max(12px, 1.1vh)" }}
+              >
                 Pricing
               </h2>
-              <div className="flex gap-3 flex-wrap">
+              <div className="flex flex-wrap" style={{ gap: "max(12px, 1.1vh)" }}>
                 {camera.priceMarket != null && (
-                  <div className="px-4 py-2.5 bg-neutral-50 rounded-lg">
-                    <div className="text-[11px] text-neutral-400 uppercase tracking-wide">
+                  <div className="bg-neutral-50 rounded-lg" style={{ padding: "max(10px, 1vh) max(16px, 1.5vh)" }}>
+                    <div className="text-neutral-400 uppercase" style={{ fontSize: "max(12px, 1.1vh)", letterSpacing: "0.04em" }}>
                       Market Value
                     </div>
-                    <div className="text-lg font-semibold text-neutral-800 mt-0.5">
+                    <div
+                      className="font-semibold text-neutral-800"
+                      style={{ fontSize: "max(18px, 1.8vh)", marginTop: "max(2px, 0.2vh)" }}
+                    >
                       ~${camera.priceMarket.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </div>
                     {camera.priceMarketSource && (
-                      <div className="text-[10px] text-neutral-400 mt-0.5">
+                      <div className="text-neutral-400" style={{ fontSize: "max(12px, 1.1vh)", marginTop: "max(2px, 0.2vh)" }}>
                         {PRICE_SOURCE_LABELS[camera.priceMarketSource] || camera.priceMarketSource}
                       </div>
                     )}
                   </div>
                 )}
                 {camera.priceLaunch != null && (
-                  <div className="px-4 py-2.5 bg-neutral-50 rounded-lg">
-                    <div className="text-[11px] text-neutral-400 uppercase tracking-wide">
+                  <div className="bg-neutral-50 rounded-lg" style={{ padding: "max(10px, 1vh) max(16px, 1.5vh)" }}>
+                    <div className="text-neutral-400 uppercase" style={{ fontSize: "max(12px, 1.1vh)", letterSpacing: "0.04em" }}>
                       Launch Price{camera.year ? ` (${camera.year})` : ""}
                     </div>
-                    <div className="text-lg font-semibold text-neutral-800 mt-0.5">
+                    <div
+                      className="font-semibold text-neutral-800"
+                      style={{ fontSize: "max(18px, 1.8vh)", marginTop: "max(2px, 0.2vh)" }}
+                    >
                       ${camera.priceLaunch.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </div>
                     {camera.priceAdjusted != null && (
-                      <div className="text-xs text-neutral-400 mt-0.5">
+                      <div className="text-neutral-400" style={{ fontSize: "max(12px, 1.1vh)", marginTop: "max(2px, 0.2vh)" }}>
                         ≈ ${camera.priceAdjusted.toLocaleString("en-US")} today
                       </div>
                     )}
                     {camera.priceLaunchSource && (
-                      <div className="text-[10px] text-neutral-400 mt-0.5">
+                      <div className="text-neutral-400" style={{ fontSize: "max(12px, 1.1vh)", marginTop: "max(2px, 0.2vh)" }}>
                         {PRICE_SOURCE_LABELS[camera.priceLaunchSource] || camera.priceLaunchSource}
                       </div>
                     )}
@@ -288,13 +346,16 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
             </div>
           )}
 
-          {/* Editorial Ratings — order 4 on mobile, right column on desktop */}
+          {/* Editorial Ratings */}
           {hasRatings && (
             <div className="order-4 md:col-start-2">
-              <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">
+              <h2
+                className="font-semibold text-neutral-400 uppercase"
+                style={{ fontSize: "max(13px, 1.2vh)", letterSpacing: "0.05em", marginBottom: "max(12px, 1.1vh)" }}
+              >
                 Editorial Ratings
               </h2>
-              <div className="space-y-3">
+              <div style={{ display: "flex", flexDirection: "column", gap: "max(12px, 1.1vh)" }}>
                 {Object.entries(camera.ratings!).map(([key, score]) => (
                   <RatingBar
                     key={key}

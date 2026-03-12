@@ -69,7 +69,6 @@ SEARCH_OVERRIDES: dict[str, str] = {
     "Miranda": "Miranda Camera Company",
     "Seagull": "Shanghai Seagull camera",
     "Keystone": "Keystone camera company",
-    "Halina": "Halina camera Haking",
     "Adox": "Adox camera film",
     "Soligor": "Soligor camera lens",
     "Concord": "Concord camera company",
@@ -78,19 +77,50 @@ SEARCH_OVERRIDES: dict[str, str] = {
     "Riken": "Riken camera Ricoh",
     "Balda": "Balda camera Germany",
     "Goerz": "C.P. Goerz optical",
-    "Zorki": "Zorki camera Soviet",
+    # Re-source wrong logos with Chinese terms
+    "Berning Robot": "Otto Berning Robot camera",
+    "Phenix": "凤凰相机 凤凰光学",
+    "Pearl River": "珠江相机 广州照相机厂",
+    "Fengguang": "风光相机",
+    "Beijing": "北京照相机厂",
+    "Changchun": "长春照相机 长春光学",
+    "Xing Fu": "幸福相机 天津照相机厂",
+    # Missing logos — Chinese brands
+    "Halina": "Halina camera Haking",
+    "Haking": "Haking camera Hong Kong",
+    "Huaxia": "华夏相机",
+    "Mudan": "牡丹相机 丹东照相机厂",
+    "Shanghai": "上海相机 上海照相机",
+    "Dongfang": "东方相机 天津照相机厂",
+    "Great Wall": "长城相机",
+    "Hongmei": "红梅相机 常州照相机厂",
+    "Hua Zhong": "华中相机",
+    "Youyi": "友谊相机 无锡照相机",
+    "Kongque": "孔雀相机",
+    "Qingdao": "青岛相机",
+    "Huashan": "华山相机",
+    "Huqiu": "虎丘相机",
+    # Missing logos — non-Chinese
+    "Zorki": "Zorki camera KMZ Soviet",
+    "Centon": "Centon camera UK",
+    "Eastar": "Eastar camera brand",
+    "Suntone": "Suntone camera brand",
+    # Missing logos — obscure Chinese
+    "Wanling": "万灵相机",
+    "Sanyou": "三友相机",
+    "Huaxi": "华西相机",
+    "Tianee": "天鹅相机",
+    "Taihu": "太湖相机",
+    "Mingjiia": "明佳相机",
+    "Baihua": "百花相机",
+    "Xihu": "西湖相机",
+    "Jindu": "金都相机",
 }
 
-# Brands to skip (too generic, Chinese-only, or very obscure)
+# Brands to skip (truly generic names, not actual camera brands)
 SKIP_BRANDS: set[str] = {
     "Le", "Mini", "Nova", "Sport", "Capital", "Boots", "Revue",
     "YC-75X100", "PENTAREX", "PERICA",
-    # Chinese brands without Commons presence
-    "Mudan", "Hua Zhong", "Kongque", "Wanling", "Tianee", "Mingjiia",
-    "Baihua", "Jindu", "Xinle", "Chenguang", "Qumei", "Bohai",
-    "Panfulai", "Meigui", "Ganguang", "Zi Jin Shan", "Yuejin",
-    "Wannengda", "Xianle", "Jiali", "Tianche", "Qiyi", "Qiyi July1st",
-    "巴尔达", "逢乐时", '"泰"字牌', "Qingnian",
 }
 
 

@@ -15,6 +15,8 @@ dependencies = [
     "replicate>=1.0.7",
     "google-genai>=1.66.0",
     "duckduckgo-search>=8.1.1",
+    "rembg>=2.0.69",
+    "onnxruntime>=1.24.3",
 ]
 
 [project.optional-dependencies]

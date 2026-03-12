@@ -21,15 +21,10 @@ from scrapling import StealthyFetcher
 LOGOS_DIR = Path("web/public/logos")
 BRANDS_JSON = Path("web/public/data/brands.json")
 
-# Brands to skip (too generic, Chinese-only with no web presence)
+# Brands to skip (truly generic names, not actual camera brands)
 SKIP_BRANDS: set[str] = {
     "Le", "Mini", "Nova", "Sport", "Capital", "Boots", "Revue",
     "YC-75X100", "PENTAREX", "PERICA",
-    "Mudan", "Hua Zhong", "Kongque", "Wanling", "Tianee", "Mingjiia",
-    "Baihua", "Jindu", "Xinle", "Chenguang", "Qumei", "Bohai",
-    "Panfulai", "Meigui", "Ganguang", "Zi Jin Shan", "Yuejin",
-    "Wannengda", "Xianle", "Jiali", "Tianche", "Qiyi", "Qiyi July1st",
-    "巴尔达", "逢乐时", '"泰"字牌', "Qingniao",
 }
 
 # Custom search queries for ambiguous brand names
@@ -40,24 +35,19 @@ SEARCH_OVERRIDES: dict[str, str] = {
     "Kiev": "Kiev Arsenal camera logo",
     "Miranda": "Miranda Camera Company logo",
     "Seagull": "Seagull camera Shanghai logo",
-    "Halina": "Halina camera logo",
     "Riken": "Riken camera Ricoh logo",
     "Goerz": "C.P. Goerz camera logo",
-    "Zorki": "Zorki camera Soviet logo",
     "ICA": "ICA camera company Dresden logo",
     "Coronet": "Coronet Camera Company logo",
     "Graflex": "Graflex camera logo",
     "Keystone": "Keystone camera company logo",
-    "Shanghai": "Shanghai camera brand logo",
-    "Great Wall": "Great Wall camera China logo",
-    "Pearl River": "Pearl River camera China logo",
     "Concord": "Concord camera company logo",
     "Petri": "Petri camera Japan logo",
     "Revere": "Revere camera company logo",
     "Balda": "Balda camera Germany logo",
     "Wirgin": "Wirgin Edixa camera logo",
-    "Robot": "Berning Robot camera logo",
-    "Berning Robot": "Berning Robot camera logo",
+    "Robot": "Otto Berning Robot camera logo",
+    "Berning Robot": "Otto Berning Robot camera logo",
     "Houghton": "Houghton Ensign camera logo",
     "Ernemann": "Ernemann camera Dresden logo",
     "Exakta": "Exakta Ihagee camera logo",
@@ -65,7 +55,43 @@ SEARCH_OVERRIDES: dict[str, str] = {
     "Praktica": "Praktica camera logo",
     "Lomography": "Lomography logo",
     "Chinon": "Chinon camera logo",
-    "Phenix": "Phenix camera China logo",
+    # Re-source wrong logos with Chinese terms
+    "Phenix": "凤凰相机 凤凰光学 logo",
+    "Pearl River": "珠江相机 广州照相机厂 logo",
+    "Fengguang": "风光相机 logo",
+    "Beijing": "北京照相机厂 logo",
+    "Changchun": "长春照相机 长春光学 logo",
+    "Xing Fu": "幸福相机 天津照相机厂 logo",
+    # Missing logos — Chinese brands
+    "Halina": "Halina camera Haking logo",
+    "Haking": "Haking camera Hong Kong logo",
+    "Huaxia": "华夏相机 logo",
+    "Mudan": "牡丹相机 丹东照相机厂 logo",
+    "Shanghai": "上海相机 上海照相机 logo",
+    "Dongfang": "东方相机 天津照相机厂 logo",
+    "Great Wall": "长城相机 logo",
+    "Hongmei": "红梅相机 常州照相机厂 logo",
+    "Hua Zhong": "华中相机 logo",
+    "Youyi": "友谊相机 无锡照相机 logo",
+    "Kongque": "孔雀相机 logo",
+    "Qingdao": "青岛相机 logo",
+    "Huashan": "华山相机 logo",
+    "Huqiu": "虎丘相机 logo",
+    # Missing logos — non-Chinese
+    "Zorki": "Zorki camera KMZ Soviet logo",
+    "Centon": "Centon camera UK logo",
+    "Eastar": "Eastar camera brand logo",
+    "Suntone": "Suntone camera brand logo",
+    # Missing logos — obscure Chinese
+    "Wanling": "万灵相机 logo",
+    "Sanyou": "三友相机 logo",
+    "Huaxi": "华西相机 logo",
+    "Tianee": "天鹅相机 logo",
+    "Taihu": "太湖相机 logo",
+    "Mingjiia": "明佳相机 logo",
+    "Baihua": "百花相机 logo",
+    "Xihu": "西湖相机 logo",
+    "Jindu": "金都相机 logo",
 }
 
 # Domains to avoid (watermarked, low quality, or non-logo results)
@@ -123,6 +149,20 @@ def _score_url(url: str, brand_name: str) -> int:
             score -= 100
             break
 
+    # Camera-specific domain bonuses
+    camera_sites = ["camera-wiki.org", "camerapedia.org", "chinesecamera.com", "collectiblend.com"]
+    for site in camera_sites:
+        if site in url_lower:
+            score += 10
+            break
+
+    # False-positive penalties (brands with same names in other industries)
+    false_positive_terms = ["bubble tea", "railway", "crrc", "real estate", "tang", "collection", "eyewear", "glasses", "optical frame"]
+    for term in false_positive_terms:
+        if term.replace(" ", "") in url_lower.replace("-", "").replace("_", ""):
+            score -= 40
+            break
+
     # Penalize photo-like URLs
     if any(w in url_lower for w in ["photo", "camera-", "store", "shop", "product"]):
         score -= 20
@@ -153,7 +193,7 @@ def _extract_image_urls(html: str) -> list[str]:
     return unique
 
 
-def _download_image(url: str, dest: Path, max_size: int = 500_000) -> bool:
+def _download_image(url: str, dest: Path, max_size: int = 150_000) -> bool:
     """Download an image via curl and verify it's a valid logo (not a photo)."""
     dest.parent.mkdir(parents=True, exist_ok=True)
     try:
