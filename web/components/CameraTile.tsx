@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CameraEntry } from "@/lib/cameras";
+import { IMAGE_BASE } from "@/lib/config";
 
 interface CameraTileProps {
   camera: CameraEntry;
@@ -12,7 +13,7 @@ export default function CameraTile({ camera, hasDetail, browse }: CameraTileProp
     <>
       <div className="aspect-square rounded overflow-hidden flex items-center justify-center">
         <img
-          src={camera.thumb ? `/images/${camera.thumb}` : `/images/${camera.image}`}
+          src={camera.thumb ? `${IMAGE_BASE}/${camera.thumb}` : `${IMAGE_BASE}/${camera.image}`}
           alt={camera.name}
           loading="lazy"
           draggable={false}

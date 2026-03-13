@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { RelatedCamera } from "@/lib/cameras";
+import { IMAGE_BASE } from "@/lib/config";
 
 export default function RelatedCameras({
   cameras,
@@ -30,7 +31,7 @@ export default function RelatedCameras({
             <div className="aspect-square bg-neutral-50 rounded-lg overflow-hidden flex items-center justify-center">
               {cam.image ? (
                 <img
-                  src={`/images/${cam.image}`}
+                  src={`${IMAGE_BASE}/${cam.image}`}
                   alt={cam.name}
                   className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-200"
                 />

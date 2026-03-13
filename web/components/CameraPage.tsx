@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CameraDetail } from "@/lib/cameras";
 import RelatedCameras from "@/components/camera/RelatedCameras";
 import CollectionButtons from "@/components/camera/CollectionButtons";
+import { IMAGE_BASE } from "@/lib/config";
 
 const SPEC_LABELS: Record<string, string> = {
   type: "Type",
@@ -118,7 +119,7 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
             <div className="flex items-center justify-center">
               {validImages.length > 0 ? (
                 <img
-                  src={`/images/${validImages[safeActive]}`}
+                  src={`${IMAGE_BASE}/${validImages[safeActive]}`}
                   alt={camera.name}
                   className="w-full h-auto object-contain"
                   onError={() => handleImageError(validImages[safeActive])}
@@ -145,7 +146,7 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
                     style={{ width: "max(56px, 5vh)", height: "max(56px, 5vh)" }}
                   >
                     <img
-                      src={`/images/${img}`}
+                      src={`${IMAGE_BASE}/${img}`}
                       alt=""
                       className="w-full h-full object-contain bg-neutral-50"
                       onError={() => handleImageError(img)}
@@ -337,6 +338,21 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
             manufacturer={camera.manufacturer}
           />
         )}
+
+        {/* Support CTA */}
+        <div
+          className="flex items-center justify-center border-t border-neutral-100"
+          style={{ marginTop: "max(48px, 4.5vh)", paddingTop: "max(32px, 3vh)" }}
+        >
+          <a
+            href="/support"
+            className="inline-flex items-center text-neutral-400 hover:text-neutral-600 transition-colors"
+            style={{ gap: "max(6px, 0.6vh)", fontSize: "max(14px, 1.3vh)" }}
+          >
+            <img src="https://storage.ko-fi.com/cdn/cup-border.png" alt="" style={{ width: "max(18px, 1.7vh)", height: "max(18px, 1.7vh)" }} />
+            Enjoy this museum? Support on Ko-fi
+          </a>
+        </div>
       </main>
     </div>
   );

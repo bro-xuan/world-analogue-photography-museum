@@ -468,7 +468,7 @@ export default function FreeCanvas({
 
               <p className="text-neutral-900" style={{ paddingTop: Math.max(6, Math.round(cell * 0.03)) }}>
                 This is the museum I wished existed. Every camera catalogued, every
-                format represented. If you enjoyed browsing, consider buying me a coffee.
+                format represented. If you enjoyed browsing, consider supporting me on Ko-fi.
               </p>
             </div>
 
@@ -480,8 +480,8 @@ export default function FreeCanvas({
                 className="inline-flex items-center font-medium text-neutral-700 bg-white border border-neutral-200 rounded-full hover:border-neutral-400 transition-colors cursor-pointer"
                 style={{ fontSize: Math.max(17, Math.round(cell * 0.09)), padding: `${Math.round(cell * 0.04)}px ${Math.round(cell * 0.1)}px`, gap: Math.max(8, Math.round(cell * 0.04)) }}
               >
-                <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="" width="24" height="24" />
-                Buy me a coffee
+                <img src="https://storage.ko-fi.com/cdn/cup-border.png" alt="" width="24" height="24" />
+                Support on Ko-fi
               </a>
             </div>
           </div>
