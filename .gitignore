@@ -2,6 +2,8 @@ data/raw/
 data/processed/
 data/merged/
 data/images/
+web/public/images/*
+!web/public/images/.gitkeep
 data/reports/
 data/*.html
 data/*.json
