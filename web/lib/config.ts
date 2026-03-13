@@ -1,2 +1,2 @@
 /** Base URL for camera/film images. */
-export const IMAGE_BASE = "https://pub-e914a7872427409396b9b7adae62cd4f.r2.dev/images";
+export const IMAGE_BASE = process.env.NEXT_PUBLIC_IMAGE_BASE || "/images";
