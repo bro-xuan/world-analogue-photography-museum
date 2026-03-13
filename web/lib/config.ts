@@ -1,0 +1,2 @@
+/** Base URL for camera/film images. Override with NEXT_PUBLIC_IMAGE_BASE env var for CDN hosting. */
+export const IMAGE_BASE = process.env.NEXT_PUBLIC_IMAGE_BASE || "/images";
