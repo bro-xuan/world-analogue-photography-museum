@@ -19,9 +19,12 @@ export default function Museum() {
   const [cameras, setCameras] = useState<CameraEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   // Fetch landing data client-side
-  useEffect(() => {
+  const loadData = useCallback(() => {
+    setLoading(true);
+    setError(false);
     fetchLandingData()
       .then((data) => {
         setCameras(data.cameras);
@@ -30,9 +33,14 @@ export default function Museum() {
       })
       .catch((err) => {
         console.error("Failed to load landing data:", err);
+        setError(true);
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const manufacturers = useMemo(
     () => new Set(cameras.map((c) => c.manufacturer)).size,
@@ -149,6 +157,20 @@ export default function Museum() {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white">
         <div className="w-6 h-6 border-2 border-neutral-300 border-t-neutral-900 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-white gap-4">
+        <p className="text-neutral-500">Failed to load cameras.</p>
+        <button
+          onClick={loadData}
+          className="px-4 py-2 text-sm font-medium text-neutral-700 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer"
+        >
+          Retry
+        </button>
       </div>
     );
   }

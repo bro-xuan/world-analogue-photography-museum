@@ -73,7 +73,7 @@ export default function BrandPage({ brand }: { brand: BrandEntry }) {
             <div style={{ height: "max(56px, 5.5vh)", marginBottom: "max(16px, 1.5vh)" }}>
               <img
                 src={`/${brand.logo}`}
-                alt=""
+                alt={brand.name}
                 className="max-h-full object-contain"
                 style={{ maxWidth: "max(200px, 18vh)" }}
               />

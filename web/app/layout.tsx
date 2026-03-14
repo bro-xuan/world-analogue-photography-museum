@@ -30,6 +30,7 @@ export const metadata: Metadata = {
     description:
       "A living museum of every analog camera and film ever made. Browse thousands of cameras from hundreds of manufacturers.",
     siteName: "World Analog Photography Museum",
+    images: [{ url: "https://analogcams.com/og.png", width: 1200, height: 630 }],
   },
   twitter: { card: "summary_large_image" },
 };

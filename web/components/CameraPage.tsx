@@ -147,7 +147,7 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
                   >
                     <img
                       src={`${IMAGE_BASE}/${img}`}
-                      alt=""
+                      alt={`${camera.name} view ${i + 1}`}
                       className="w-full h-full object-contain bg-neutral-50"
                       onError={() => handleImageError(img)}
                     />

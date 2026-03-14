@@ -1,18 +1,30 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { BrandsData } from "@/lib/brands";
 import { fetchBrandsData } from "@/lib/brands";
 import BrandTile from "./BrandTile";
 
 export default function BrandsListing() {
   const [data, setData] = useState<BrandsData | null>(null);
+  const [error, setError] = useState(false);
   const [search, setSearch] = useState("");
   const [activeRegion, setActiveRegion] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchBrandsData().then(setData).catch(console.error);
+  const loadData = useCallback(() => {
+    setError(false);
+    setData(null);
+    fetchBrandsData()
+      .then(setData)
+      .catch((err) => {
+        console.error("Failed to load brands:", err);
+        setError(true);
+      });
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const visibleBrands = useMemo(() => {
     if (!data) return [];
@@ -31,6 +43,20 @@ export default function BrandsListing() {
 
     return brands;
   }, [data, search, activeRegion]);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
+        <p className="text-neutral-500">Failed to load brands.</p>
+        <button
+          onClick={loadData}
+          className="px-4 py-2 text-sm font-medium text-neutral-700 border border-neutral-300 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   if (!data) {
     return (
