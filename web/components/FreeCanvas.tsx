@@ -462,27 +462,22 @@ export default function FreeCanvas({
 
             <div className="leading-relaxed text-neutral-600" style={{ fontSize: Math.max(17, Math.round(cell * 0.09)), display: "flex", flexDirection: "column", gap: Math.max(18, Math.round(cell * 0.09)) }}>
               <p>
-                First year of college, I blew my entire scholarship on a Canon 70D.
-                No regrets. I got obsessed, signed with Getty Images, won some awards,
+                First year of college, I used up my entire scholarship on a Canon 70D.
+                I got obsessed, and I became really good. Signed with Getty Images, won some awards,
                 shot for GQ China, did weddings, restaurants, the whole commercial circuit.
               </p>
 
               <p>
-                Then digital started feeling like work. Seven years ago I picked up
-                a <a href="/cameras/b076ba15" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} className="text-neutral-900 underline underline-offset-2 decoration-neutral-300 hover:decoration-neutral-900 transition-colors">Rollei 35S</a> in black, mostly
-                out of curiosity. Photography feels like pure joy again.
+                Then digital started feeling like work. I picked up my first ever film
+                camera — a <a href="/cameras/b076ba15" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} className="text-neutral-900 underline underline-offset-2 decoration-neutral-300 hover:decoration-neutral-900 transition-colors">Rollei 35S</a> in black, mostly
+                out of curiosity. Photography felt like pure joy again.
               </p>
 
               <p>
-                The history, the mechanics, the 36-exposure discipline, the wait for
-                development. Turns out I like all of it. The collection grew.
-                Leica, mostly. No surprise there.
-              </p>
-
-              <p>
-                I was living in Berlin, and Germany happens to sit on an absurd amount of
-                vintage camera stock. So naturally I started trading, buying here,
-                selling back to China.
+                Then I started trading, buying here and selling there. That let me test and
+                feel a variety of different cameras, cheap and expensive ones. The history,
+                the mechanics, the 36-exposure discipline, the wait for development — turns
+                out I love all of it. My collection grew. Leica, mostly.
               </p>
 
               <p className="text-neutral-900" style={{ paddingTop: Math.max(6, Math.round(cell * 0.03)) }}>
