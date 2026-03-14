@@ -1,5 +1,4 @@
 {
-  "rootDirectory": "web",
   "headers": [
     {
       "source": "/data/(.*).json",
