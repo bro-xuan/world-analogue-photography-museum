@@ -1,4 +1,4 @@
-const CACHE_NAME = "analogcams-v1";
+const CACHE_NAME = "analogcams-v2";
 
 const PRECACHE_URLS = ["/", "/data/landing.json"];
 
@@ -26,6 +26,17 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
+
+  // Never intercept Firebase auth or Google sign-in requests
+  if (
+    url.hostname.includes("googleapis.com") ||
+    url.hostname.includes("google.com") ||
+    url.hostname.includes("firebaseapp.com") ||
+    url.hostname.includes("firebaseio.com") ||
+    url.pathname.startsWith("/__/auth/")
+  ) {
+    return;
+  }
 
   // Cache-first for proxied R2 images (immutable)
   if (url.pathname.startsWith("/img/")) {

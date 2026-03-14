@@ -260,12 +260,13 @@ export default function FreeCanvas({
       e.preventDefault();
     };
 
-    // Suppress link clicks when user was dragging
+    // Suppress link clicks when user was dragging, then reset for next interaction
     const onClick = (e: MouseEvent) => {
       if (dragDistance.current > DRAG_THRESHOLD) {
         e.preventDefault();
         e.stopPropagation();
       }
+      dragDistance.current = 0;
     };
 
     container.addEventListener("pointerdown", onPointerDown);
