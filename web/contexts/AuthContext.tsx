@@ -11,8 +11,6 @@ import {
 import {
   onAuthStateChanged,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
@@ -37,9 +35,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Handle redirect result for standalone PWA mode (iOS)
-    getRedirectResult(auth).catch(console.error);
-
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);
@@ -48,16 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = useCallback(async () => {
-    // iOS standalone PWA doesn't support popups — use redirect instead
-    const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (navigator as unknown as { standalone?: boolean }).standalone === true;
-
-    if (isStandalone) {
-      await signInWithRedirect(auth, googleProvider);
-    } else {
-      await signInWithPopup(auth, googleProvider);
-    }
+    await signInWithPopup(auth, googleProvider);
   }, []);
 
   const signOut = useCallback(async () => {
