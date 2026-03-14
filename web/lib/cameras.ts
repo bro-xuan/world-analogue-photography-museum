@@ -6,6 +6,7 @@ export interface CameraEntry {
   format: string | null;
   country?: string;
   image: string;
+  color?: string;
 }
 
 export function thumbUrl(camera: CameraEntry): string {

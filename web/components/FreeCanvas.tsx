@@ -227,6 +227,7 @@ export default function FreeCanvas({
       let vx = velocity.current.x * 16;
       let vy = velocity.current.y * 16;
       const friction = 0.95;
+      let frameCount = 0;
 
       const animate = () => {
         if (Math.abs(vx) < 0.3 && Math.abs(vy) < 0.3) {
@@ -238,6 +239,10 @@ export default function FreeCanvas({
         pos.current.x += vx;
         pos.current.y += vy;
         container.style.transform = `translate(${pos.current.x}px, ${pos.current.y}px)`;
+        frameCount++;
+        if (frameCount % 6 === 0) {
+          scheduleVisibleUpdate();
+        }
         rafId.current = requestAnimationFrame(animate);
       };
       rafId.current = requestAnimationFrame(animate);

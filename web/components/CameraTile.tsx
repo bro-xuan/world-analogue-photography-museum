@@ -1,3 +1,4 @@
+import { memo } from "react";
 import Link from "next/link";
 import { CameraEntry, thumbUrl } from "@/lib/cameras";
 import { IMAGE_BASE } from "@/lib/config";
@@ -8,10 +9,13 @@ interface CameraTileProps {
   browse?: boolean;
 }
 
-export default function CameraTile({ camera, eager, browse }: CameraTileProps) {
+export default memo(function CameraTile({ camera, eager, browse }: CameraTileProps) {
   const content = (
     <>
-      <div className="aspect-square rounded overflow-hidden flex items-center justify-center bg-white">
+      <div
+        className="aspect-square rounded overflow-hidden flex items-center justify-center"
+        style={{ backgroundColor: camera.color || "#ffffff" }}
+      >
         <img
           src={`${IMAGE_BASE}/${thumbUrl(camera)}`}
           alt={camera.name}
@@ -43,4 +47,4 @@ export default function CameraTile({ camera, eager, browse }: CameraTileProps) {
       {content}
     </Link>
   );
-}
+});
