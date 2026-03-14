@@ -11,7 +11,7 @@ interface CameraTileProps {
 export default function CameraTile({ camera, eager, browse }: CameraTileProps) {
   const content = (
     <>
-      <div className="aspect-square rounded overflow-hidden flex items-center justify-center bg-neutral-100">
+      <div className="aspect-square rounded overflow-hidden flex items-center justify-center bg-white">
         <img
           src={`${IMAGE_BASE}/${thumbUrl(camera)}`}
           alt={camera.name}
