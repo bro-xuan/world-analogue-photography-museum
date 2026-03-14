@@ -27,7 +27,7 @@ MANUFACTURER_ALIASES: dict[str, list[str]] = {
     "Zeiss": ["zeiss", "zeiss ikon", "carl zeiss"],
     "Agfa": ["agfa-gevaert", "agfa", "agfa-ansco"],
     "Ilford": ["ilford photo", "ilford imaging"],
-    "Bronica": ["zenza bronica", "bronica"],
+    "Bronica": ["zenza bronica", "bronica", "zenza"],
     "Graflex": ["graflex inc."],
     "Linhof": ["linhof"],
     "Toyo": ["toyo-view", "toyo field"],
