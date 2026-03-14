@@ -7,9 +7,10 @@ interface Props {
 }
 
 export async function generateStaticParams() {
-  const all = await loadAllCameraDetails();
-  return Object.keys(all).map((id) => ({ id }));
+  return [];
 }
+
+export const revalidate = 86400; // 24 hours
 
 export async function generateMetadata({ params }: Props) {
   const { id } = await params;
