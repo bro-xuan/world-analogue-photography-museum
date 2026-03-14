@@ -5,10 +5,11 @@ export interface CameraEntry {
   year: number | null;
   format: string | null;
   country?: string;
-  tier: "xl" | "l" | "m";
   image: string;
-  thumb?: string;
-  hasDetail?: boolean;
+}
+
+export function thumbUrl(camera: CameraEntry): string {
+  return camera.image.replace(/\/[^/]+$/, "/thumb.webp");
 }
 
 export interface LandingData {

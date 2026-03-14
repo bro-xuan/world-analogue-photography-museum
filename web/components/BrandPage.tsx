@@ -113,7 +113,6 @@ export default function BrandPage({ brand }: { brand: BrandEntry }) {
                   <CameraTile
                     key={cam.id}
                     camera={cam as CameraEntry}
-                    hasDetail={!!cam.hasDetail}
                     browse
                   />
                 ))}

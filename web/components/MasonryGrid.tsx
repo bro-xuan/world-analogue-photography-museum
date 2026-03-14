@@ -13,7 +13,7 @@ export default function MasonryGrid({ cameras }: MasonryGridProps) {
       style={{ gridAutoFlow: "dense" }}
     >
       {cameras.map((camera) => (
-        <CameraTile key={camera.id} camera={camera} hasDetail={false} />
+        <CameraTile key={camera.id} camera={camera} />
       ))}
     </div>
   );

@@ -9,7 +9,7 @@ const TARGET_ROWS = 6; // how many rows visible on screen
 const HERO_COLS = 3;
 const HERO_ROWS = 2;
 const DRAG_THRESHOLD = 5;
-const BUFFER = 3; // extra cells to render outside viewport
+const BUFFER = 1; // extra cells to render outside viewport
 
 function computeGrid(vh: number) {
   const rowStep = Math.floor(vh / TARGET_ROWS);
@@ -114,7 +114,7 @@ export default function FreeCanvas({
   const pendingUpdate = useRef(false);
 
   const scheduleVisibleUpdate = useCallback(() => {
-    if (pendingUpdate.current) return;
+    if (pendingUpdate.current || dragging.current) return;
     pendingUpdate.current = true;
     requestAnimationFrame(() => {
       pendingUpdate.current = false;
@@ -229,12 +229,15 @@ export default function FreeCanvas({
       const friction = 0.95;
 
       const animate = () => {
-        if (Math.abs(vx) < 0.3 && Math.abs(vy) < 0.3) return;
+        if (Math.abs(vx) < 0.3 && Math.abs(vy) < 0.3) {
+          scheduleVisibleUpdate();
+          return;
+        }
         vx *= friction;
         vy *= friction;
         pos.current.x += vx;
         pos.current.y += vy;
-        applyTransform();
+        container.style.transform = `translate(${pos.current.x}px, ${pos.current.y}px)`;
         rafId.current = requestAnimationFrame(animate);
       };
       rafId.current = requestAnimationFrame(animate);
@@ -280,6 +283,16 @@ export default function FreeCanvas({
     };
   }, [router, scheduleVisibleUpdate]);
 
+  // Compute viewport range (no buffer) for eager loading priority
+  const vw = typeof window !== "undefined" ? window.innerWidth : 1200;
+  const vh = typeof window !== "undefined" ? window.innerHeight : 900;
+  const x = pos.current.x;
+  const y = pos.current.y;
+  const vpColStart = Math.max(1, Math.floor(-x / cellStep) + 1);
+  const vpColEnd = Math.min(cols, Math.ceil((-x + vw) / cellStep));
+  const vpRowStart = Math.max(1, Math.floor(-y / rowStep) + 1);
+  const vpRowEnd = Math.min(rows, Math.ceil((-y + vh) / rowStep));
+
   // Build visible tiles
   const visibleTiles: React.ReactNode[] = [];
   for (let r = visibleRange.rowStart; r <= visibleRange.rowEnd; r++) {
@@ -288,6 +301,7 @@ export default function FreeCanvas({
       if (camera) {
         const left = (c - 1) * cellStep;
         const top = (r - 1) * rowStep;
+        const inViewport = c >= vpColStart && c <= vpColEnd && r >= vpRowStart && r <= vpRowEnd;
         visibleTiles.push(
           <div
             key={camera.id}
@@ -300,7 +314,7 @@ export default function FreeCanvas({
           >
             <CameraTile
               camera={camera}
-              hasDetail={!!camera.hasDetail}
+              eager={inViewport}
             />
           </div>
         );

@@ -41,7 +41,7 @@ export default function BrowseGrid({ cameras }: BrowseGridProps) {
       >
         {visible.map((camera) => (
           <div key={camera.id}>
-            <CameraTile camera={camera} hasDetail={!!camera.hasDetail} browse />
+            <CameraTile camera={camera} browse />
           </div>
         ))}
       </div>

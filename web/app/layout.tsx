@@ -41,6 +41,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://pub-e914a7872427409396b9b7adae62cd4f.r2.dev" />
+        <link rel="dns-prefetch" href="https://pub-e914a7872427409396b9b7adae62cd4f.r2.dev" />
+        <link rel="preload" href="/data/landing.json" as="fetch" crossOrigin="anonymous" />
+      </head>
       <body
         className={`${inter.variable} ${playfair.variable} ${spaceMono.variable} antialiased bg-white`}
       >

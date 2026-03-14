@@ -262,7 +262,6 @@ export default function ProfilePage() {
                   <CameraTile
                     key={c.id}
                     camera={c}
-                    hasDetail={!!c.hasDetail}
                     browse
                   />
                 ))}

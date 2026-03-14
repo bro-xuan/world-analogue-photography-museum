@@ -374,13 +374,7 @@ def main():
             entry["format"] = cam["film_format"]
         if cam.get("manufacturer_country"):
             entry["country"] = cam["manufacturer_country"]
-        entry["tier"] = tier
         entry["image"] = _image_path(local_path)
-
-        # Add thumbnail path if it exists on disk
-        thumb_path = Path(local_path).parent / "thumb.webp"
-        if thumb_path.exists():
-            entry["thumb"] = _image_path(str(thumb_path))
 
         if tier == "xl":
             xl_entries.append(entry)
@@ -425,20 +419,6 @@ def main():
             print(f"  WARNING: swap failed — {name_a!r} at {idx_a}, {name_b!r} at {idx_b}")
 
     total_shown = len(final)
-
-    # Load detail IDs so we can mark which cameras have detail pages
-    detail_path = Path("web/public/data/cameras_detail.json")
-    detail_ids: set[str] = set()
-    if detail_path.exists():
-        detail_ids = set(json.loads(detail_path.read_text()).keys())
-        print(f"Loaded {len(detail_ids)} detail IDs from {detail_path}")
-    else:
-        print(f"WARNING: {detail_path} not found — hasDetail will be False for all")
-
-    # Tag entries with hasDetail
-    for entry in final:
-        if entry["id"] in detail_ids:
-            entry["hasDetail"] = True
 
     output = {
         "meta": {

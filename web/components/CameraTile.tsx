@@ -1,21 +1,23 @@
 import Link from "next/link";
-import { CameraEntry } from "@/lib/cameras";
+import { CameraEntry, thumbUrl } from "@/lib/cameras";
 import { IMAGE_BASE } from "@/lib/config";
 
 interface CameraTileProps {
   camera: CameraEntry;
-  hasDetail: boolean;
+  eager?: boolean;
   browse?: boolean;
 }
 
-export default function CameraTile({ camera, hasDetail, browse }: CameraTileProps) {
+export default function CameraTile({ camera, eager, browse }: CameraTileProps) {
   const content = (
     <>
-      <div className="aspect-square rounded overflow-hidden flex items-center justify-center">
+      <div className="aspect-square rounded overflow-hidden flex items-center justify-center bg-neutral-100">
         <img
-          src={camera.thumb ? `${IMAGE_BASE}/${camera.thumb}` : `${IMAGE_BASE}/${camera.image}`}
+          src={`${IMAGE_BASE}/${thumbUrl(camera)}`}
           alt={camera.name}
-          loading="lazy"
+          loading={eager ? "eager" : "lazy"}
+          fetchPriority={eager ? "high" : "auto"}
+          decoding="async"
           draggable={false}
           className="max-w-full max-h-full object-contain select-none"
         />
@@ -31,18 +33,14 @@ export default function CameraTile({ camera, hasDetail, browse }: CameraTileProp
     </>
   );
 
-  if (hasDetail) {
-    return (
-      <Link
-        href={`/cameras/${camera.id}`}
-        className={`block camera-link${browse ? " hover:opacity-80 transition-opacity" : ""}`}
-        style={{ cursor: "pointer" }}
-        draggable={false}
-      >
-        {content}
-      </Link>
-    );
-  }
-
-  return <div>{content}</div>;
+  return (
+    <Link
+      href={`/cameras/${camera.id}`}
+      className={`block camera-link${browse ? " hover:opacity-80 transition-opacity" : ""}`}
+      style={{ cursor: "pointer" }}
+      draggable={false}
+    >
+      {content}
+    </Link>
+  );
 }

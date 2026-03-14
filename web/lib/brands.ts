@@ -5,10 +5,7 @@ export interface BrandCamera {
   year?: number;
   format?: string;
   country?: string;
-  tier: string;
   image: string;
-  thumb?: string;
-  hasDetail?: boolean;
 }
 
 export interface BrandEntry {
