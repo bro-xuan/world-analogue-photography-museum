@@ -13,8 +13,8 @@ export default function SupportPage() {
   const activeAmount = showCustom ? Number(custom) || 0 : amount;
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4 py-20" style={{ fontSize: "clamp(14px, 1.6vw, 22px)" }}>
-      <div className="bg-white rounded-3xl shadow-sm border border-neutral-100" style={{ width: "min(90vw, 36em)", padding: "clamp(32px, 3vw, 56px)" }}>
+    <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4 py-20" style={{ fontSize: "clamp(14px, 1.2vw, 17px)" }}>
+      <div className="bg-white rounded-3xl shadow-sm border border-neutral-100" style={{ width: "min(90vw, 28em)", padding: "clamp(28px, 2.5vw, 44px)" }}>
         {/* Header */}
         <div className="text-center" style={{ marginBottom: "2em" }}>
           <div className="flex justify-center" style={{ marginBottom: "0.8em" }}>
