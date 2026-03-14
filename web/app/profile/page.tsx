@@ -252,10 +252,9 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div
-                className="grid"
+                className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
                 style={{
-                  gridTemplateColumns: "repeat(auto-fill, minmax(max(180px, 14vh), 1fr))",
-                  gap: "max(16px, 1.5vh)",
+                  gap: "max(8px, 1.5vh)",
                 }}
               >
                 {activeCameras.map((c) => (

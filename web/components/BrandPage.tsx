@@ -103,10 +103,9 @@ export default function BrandPage({ brand }: { brand: BrandEntry }) {
                 {decade}
               </h2>
               <div
-                className="grid"
+                className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
                 style={{
-                  gridTemplateColumns: "repeat(auto-fill, minmax(max(130px, 11vh), 1fr))",
-                  gap: "max(16px, 1.5vh)",
+                  gap: "max(8px, 1.5vh)",
                 }}
               >
                 {cameras.map((cam) => (

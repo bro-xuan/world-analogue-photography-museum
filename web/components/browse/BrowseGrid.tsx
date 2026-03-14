@@ -53,10 +53,7 @@ export default function BrowseGrid({ cameras }: BrowseGridProps) {
   return (
     <>
       <div
-        className="grid gap-4 px-4 pb-4"
-        style={{
-          gridTemplateColumns: "repeat(auto-fill, minmax(max(180px, 14vh), 1fr))",
-        }}
+        className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-4 px-2 sm:px-4 pb-4"
       >
         {visible.map((camera, index) => (
           <div
