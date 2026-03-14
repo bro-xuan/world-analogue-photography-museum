@@ -3,6 +3,7 @@ import { Inter, Playfair_Display, Space_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import NavBar from "@/components/NavBar";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -30,9 +31,14 @@ export const metadata: Metadata = {
     description:
       "A living museum of every analog camera and film ever made. Browse thousands of cameras from hundreds of manufacturers.",
     siteName: "World Analog Photography Museum",
-    images: [{ url: "https://analogcams.com/og.png", width: 1200, height: 630 }],
+    images: [{ url: "https://analogcams.com/og.jpg", width: 1200, height: 630 }],
   },
   twitter: { card: "summary_large_image" },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "AnalogCams",
+  },
 };
 
 export default function RootLayout({
@@ -51,6 +57,7 @@ export default function RootLayout({
         <Providers>
           <NavBar />
           {children}
+          <ServiceWorkerRegistration />
         </Providers>
       </body>
     </html>

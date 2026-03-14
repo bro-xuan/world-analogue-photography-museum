@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { loadBrandsData } from "@/lib/brands.server";
 import { loadAllCameraDetails } from "@/lib/cameras.server";
 
+export const dynamic = "force-dynamic";
+
 const BASE = "https://analogcams.com";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
