@@ -19,6 +19,8 @@ export default memo(function CameraTile({ camera, eager, browse }: CameraTilePro
         <img
           src={`${IMAGE_BASE}/${thumbUrl(camera)}`}
           alt={camera.name}
+          width={300}
+          height={300}
           loading={eager ? "eager" : "lazy"}
           fetchPriority={eager ? "high" : "auto"}
           decoding="async"

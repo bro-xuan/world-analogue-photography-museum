@@ -13,8 +13,8 @@ export default function SupportPage() {
   const activeAmount = showCustom ? Number(custom) || 0 : amount;
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4 py-20" style={{ fontSize: "clamp(18px, 2.4vw, 40px)" }}>
-      <div className="bg-white rounded-3xl shadow-sm border border-neutral-100" style={{ width: "min(90vw, 50em)", padding: "clamp(40px, 4vw, 80px)" }}>
+    <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4 py-20" style={{ fontSize: "clamp(14px, 1.6vw, 22px)" }}>
+      <div className="bg-white rounded-3xl shadow-sm border border-neutral-100" style={{ width: "min(90vw, 36em)", padding: "clamp(32px, 3vw, 56px)" }}>
         {/* Header */}
         <div className="text-center" style={{ marginBottom: "2em" }}>
           <div className="flex justify-center" style={{ marginBottom: "0.8em" }}>
@@ -24,8 +24,7 @@ export default function SupportPage() {
             Support this project
           </h1>
           <p className="text-neutral-500 leading-relaxed" style={{ fontSize: "1em", marginTop: "0.5em" }}>
-            Running a museum of {(10599).toLocaleString()} cameras takes
-            time. Your support helps keep it going.
+            If you enjoyed roaming around the analog camera museum...
           </p>
         </div>
 
