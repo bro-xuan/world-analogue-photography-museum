@@ -1,8 +1,7 @@
-import { memo, useRef, useCallback } from "react";
+import { memo, useCallback } from "react";
 import Link from "next/link";
 import { CameraEntry, thumbUrl } from "@/lib/cameras";
 import { IMAGE_BASE } from "@/lib/config";
-import { isLoaded } from "@/lib/imageCache";
 
 interface CameraTileProps {
   camera: CameraEntry;
@@ -12,10 +11,11 @@ interface CameraTileProps {
 
 export default memo(function CameraTile({ camera, eager, browse }: CameraTileProps) {
   const src = `${IMAGE_BASE}/${thumbUrl(camera)}`;
-  const cached = isLoaded(src);
-  const imgRef = useRef<HTMLImageElement>(null);
-  const onLoad = useCallback(() => {
-    if (imgRef.current) imgRef.current.style.opacity = "1";
+  const onLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    e.currentTarget.style.opacity = "1";
+  }, []);
+  const imgRef = useCallback((el: HTMLImageElement | null) => {
+    if (el?.complete) el.style.opacity = "1";
   }, []);
   const content = (
     <>
@@ -29,13 +29,13 @@ export default memo(function CameraTile({ camera, eager, browse }: CameraTilePro
           alt={camera.name}
           width={300}
           height={300}
-          loading={cached || eager ? "eager" : "lazy"}
-          fetchPriority={cached || eager ? "high" : "auto"}
-          decoding={cached ? "sync" : "async"}
+          loading={eager ? "eager" : "lazy"}
+          fetchPriority={eager ? "high" : "auto"}
+          decoding="async"
           draggable={false}
           className="tile-img max-w-full max-h-full object-contain select-none"
-          style={{ opacity: cached ? 1 : 0 }}
-          onLoad={cached ? undefined : onLoad}
+          style={{ opacity: 0 }}
+          onLoad={onLoad}
         />
       </div>
       <p className="text-neutral-400 mt-1 leading-tight truncate text-center" style={{ fontSize: "max(13px, 1.2vh)" }}>
