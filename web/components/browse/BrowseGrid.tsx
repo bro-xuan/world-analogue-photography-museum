@@ -5,7 +5,6 @@ import { CameraEntry } from "@/lib/cameras";
 import CameraTile from "../CameraTile";
 
 const PAGE_SIZE = 100;
-const EAGER_COUNT = 24;
 
 interface BrowseGridProps {
   cameras: CameraEntry[];
@@ -60,7 +59,7 @@ export default function BrowseGrid({ cameras }: BrowseGridProps) {
             key={camera.id}
             style={{ contentVisibility: "auto", containIntrinsicSize: "0 250px" }}
           >
-            <CameraTile camera={camera} browse eager={index < EAGER_COUNT} />
+            <CameraTile camera={camera} browse />
           </div>
         ))}
       </div>

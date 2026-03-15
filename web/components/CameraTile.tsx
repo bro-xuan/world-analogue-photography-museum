@@ -1,16 +1,26 @@
-import { memo } from "react";
+import { memo, useCallback, useRef } from "react";
 import Link from "next/link";
 import { CameraEntry, thumbUrl } from "@/lib/cameras";
 import { IMAGE_BASE } from "@/lib/config";
 
 interface CameraTileProps {
   camera: CameraEntry;
-  eager?: boolean;
   browse?: boolean;
 }
 
-export default memo(function CameraTile({ camera, eager, browse }: CameraTileProps) {
+export default memo(function CameraTile({ camera, browse }: CameraTileProps) {
   const src = `${IMAGE_BASE}/${thumbUrl(camera)}`;
+  const retried = useRef(false);
+
+  const onError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    if (retried.current) return;
+    retried.current = true;
+    const img = e.currentTarget;
+    setTimeout(() => {
+      img.src = src;
+    }, 1000);
+  }, [src]);
+
   const content = (
     <>
       <div
@@ -22,10 +32,10 @@ export default memo(function CameraTile({ camera, eager, browse }: CameraTilePro
           alt={camera.name}
           width={300}
           height={300}
-          loading={eager ? "eager" : "lazy"}
-          fetchPriority={eager ? "high" : "auto"}
+          loading="eager"
           decoding="async"
           draggable={false}
+          onError={onError}
           className="max-w-full max-h-full object-contain select-none"
         />
       </div>

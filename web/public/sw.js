@@ -38,23 +38,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cache-first for proxied R2 images (immutable)
-  if (url.pathname.startsWith("/img/")) {
-    event.respondWith(
-      caches.open(CACHE_NAME).then((cache) =>
-        cache.match(request).then(
-          (cached) =>
-            cached ||
-            fetch(request).then((response) => {
-              if (response.ok) cache.put(request, response.clone());
-              return response;
-            })
-        )
-      )
-    );
-    return;
-  }
-
   // Stale-while-revalidate for data JSON files
   if (url.pathname.startsWith("/data/") && url.pathname.endsWith(".json")) {
     event.respondWith(

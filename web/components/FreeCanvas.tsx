@@ -320,16 +320,6 @@ export default function FreeCanvas({
     };
   }, [router, scheduleVisibleUpdate]);
 
-  // Compute viewport range (no buffer) for eager loading priority
-  const vw = typeof window !== "undefined" ? window.innerWidth : 1200;
-  const vh = typeof window !== "undefined" ? window.innerHeight : 900;
-  const x = pos.current.x;
-  const y = pos.current.y;
-  const vpColStart = Math.max(1, Math.floor(-x / cellStep) + 1);
-  const vpColEnd = Math.min(cols, Math.ceil((-x + vw) / cellStep));
-  const vpRowStart = Math.max(1, Math.floor(-y / rowStep) + 1);
-  const vpRowEnd = Math.min(rows, Math.ceil((-y + vh) / rowStep));
-
   // Build visible tiles
   const visibleTiles: React.ReactNode[] = [];
   for (let r = visibleRange.rowStart; r <= visibleRange.rowEnd; r++) {
@@ -340,7 +330,6 @@ export default function FreeCanvas({
         preload(src);
         const left = (c - 1) * cellStep;
         const top = (r - 1) * rowStep;
-        const inViewport = c >= vpColStart && c <= vpColEnd && r >= vpRowStart && r <= vpRowEnd;
         visibleTiles.push(
           <div
             key={camera.id}
@@ -351,10 +340,7 @@ export default function FreeCanvas({
               width: cell,
             }}
           >
-            <CameraTile
-              camera={camera}
-              eager={inViewport}
-            />
+            <CameraTile camera={camera} />
           </div>
         );
       }
