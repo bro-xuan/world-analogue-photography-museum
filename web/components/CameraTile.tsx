@@ -1,4 +1,4 @@
-import { memo, useCallback } from "react";
+import { memo } from "react";
 import Link from "next/link";
 import { CameraEntry, thumbUrl } from "@/lib/cameras";
 import { IMAGE_BASE } from "@/lib/config";
@@ -11,12 +11,6 @@ interface CameraTileProps {
 
 export default memo(function CameraTile({ camera, eager, browse }: CameraTileProps) {
   const src = `${IMAGE_BASE}/${thumbUrl(camera)}`;
-  const onLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    e.currentTarget.style.opacity = "1";
-  }, []);
-  const imgRef = useCallback((el: HTMLImageElement | null) => {
-    if (el?.complete) el.style.opacity = "1";
-  }, []);
   const content = (
     <>
       <div
@@ -24,7 +18,6 @@ export default memo(function CameraTile({ camera, eager, browse }: CameraTilePro
         style={{ backgroundColor: camera.color || "#ffffff" }}
       >
         <img
-          ref={imgRef}
           src={src}
           alt={camera.name}
           width={300}
@@ -33,9 +26,7 @@ export default memo(function CameraTile({ camera, eager, browse }: CameraTilePro
           fetchPriority={eager ? "high" : "auto"}
           decoding="async"
           draggable={false}
-          className="tile-img max-w-full max-h-full object-contain select-none"
-          style={{ opacity: 0 }}
-          onLoad={onLoad}
+          className="max-w-full max-h-full object-contain select-none"
         />
       </div>
       <p className="text-neutral-400 mt-1 leading-tight truncate text-center" style={{ fontSize: "max(13px, 1.2vh)" }}>

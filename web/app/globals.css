@@ -12,10 +12,6 @@ body {
   margin: 0;
 }
 
-.tile-img {
-  transition: opacity 0.2s ease-in;
-}
-
 @keyframes slide-up-out {
   from { transform: translateY(0); }
   to   { transform: translateY(-100%); }
