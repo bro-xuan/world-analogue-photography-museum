@@ -2,14 +2,18 @@
 
 import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { CameraEntry } from "@/lib/cameras";
+import { CameraEntry, thumbUrl } from "@/lib/cameras";
+import { IMAGE_BASE } from "@/lib/config";
+import { preload } from "@/lib/imageCache";
 import CameraTile from "./CameraTile";
 
 const TARGET_ROWS = 6; // how many rows visible on screen
 const HERO_COLS = 3;
 const HERO_ROWS = 2;
 const DRAG_THRESHOLD = 5;
-const BUFFER = 1; // extra cells to render outside viewport
+const BUFFER = 2; // extra cells to render outside viewport
+const PREFETCH_EXTRA = 2; // additional cells beyond BUFFER to prefetch images
+const DRAG_THROTTLE_MS = 150;
 
 function computeGrid(vh: number) {
   const rowStep = Math.floor(vh / TARGET_ROWS);
@@ -34,6 +38,7 @@ export default function FreeCanvas({
 }: FreeCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const pos = useRef({ x: 0, y: 0 });
+  const prevPos = useRef({ x: 0, y: 0 });
   const dragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const posStart = useRef({ x: 0, y: 0 });
@@ -112,12 +117,21 @@ export default function FreeCanvas({
   // Update visible range if it changed
   const lastRange = useRef({ colStart: 0, colEnd: 0, rowStart: 0, rowEnd: 0 });
   const pendingUpdate = useRef(false);
+  const lastUpdateTime = useRef(0);
+  const cellMapRef = useRef(cellMap);
+  cellMapRef.current = cellMap;
 
   const scheduleVisibleUpdate = useCallback(() => {
-    if (pendingUpdate.current || dragging.current) return;
+    if (pendingUpdate.current) return;
+    // Throttle during drag instead of blocking entirely
+    if (dragging.current) {
+      const now = Date.now();
+      if (now - lastUpdateTime.current < DRAG_THROTTLE_MS) return;
+    }
     pendingUpdate.current = true;
     requestAnimationFrame(() => {
       pendingUpdate.current = false;
+      lastUpdateTime.current = Date.now();
       const range = computeVisibleRange();
       const prev = lastRange.current;
       if (
@@ -129,8 +143,25 @@ export default function FreeCanvas({
         lastRange.current = range;
         setVisibleRange(range);
       }
+
+      // Direction-aware prefetch: extend in scroll direction, skip opposite
+      const dx = pos.current.x - prevPos.current.x;
+      const dy = pos.current.y - prevPos.current.y;
+      prevPos.current = { ...pos.current };
+
+      const pfColStart = Math.max(1, range.colStart - (dx > 0 ? PREFETCH_EXTRA : 0));
+      const pfColEnd = Math.min(cols, range.colEnd + (dx < 0 ? PREFETCH_EXTRA : 0));
+      const pfRowStart = Math.max(1, range.rowStart - (dy > 0 ? PREFETCH_EXTRA : 0));
+      const pfRowEnd = Math.min(rows, range.rowEnd + (dy < 0 ? PREFETCH_EXTRA : 0));
+      const map = cellMapRef.current;
+      for (let r = pfRowStart; r <= pfRowEnd; r++) {
+        for (let c = pfColStart; c <= pfColEnd; c++) {
+          const cam = map.get(`${c},${r}`);
+          if (cam) preload(`${IMAGE_BASE}/${thumbUrl(cam)}`);
+        }
+      }
     });
-  }, [computeVisibleRange]);
+  }, [computeVisibleRange, cols, rows]);
 
   // Center the hero on mount
   useEffect(() => {
@@ -240,7 +271,7 @@ export default function FreeCanvas({
         pos.current.y += vy;
         container.style.transform = `translate(${pos.current.x}px, ${pos.current.y}px)`;
         frameCount++;
-        if (frameCount % 6 === 0) {
+        if (frameCount % 3 === 0) {
           scheduleVisibleUpdate();
         }
         rafId.current = requestAnimationFrame(animate);
@@ -305,6 +336,8 @@ export default function FreeCanvas({
     for (let c = visibleRange.colStart; c <= visibleRange.colEnd; c++) {
       const camera = cellMap.get(`${c},${r}`);
       if (camera) {
+        const src = `${IMAGE_BASE}/${thumbUrl(camera)}`;
+        preload(src);
         const left = (c - 1) * cellStep;
         const top = (r - 1) * rowStep;
         const inViewport = c >= vpColStart && c <= vpColEnd && r >= vpRowStart && r <= vpRowEnd;

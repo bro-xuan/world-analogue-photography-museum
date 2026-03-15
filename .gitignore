@@ -16,3 +16,7 @@ dist/
 build/
 .DS_Store
 .claude/
+.next/
+.wrangler/
+web/.wrangler/
+thumbnails.zip
