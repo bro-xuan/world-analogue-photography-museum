@@ -4,7 +4,7 @@ import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { CameraEntry, thumbUrl } from "@/lib/cameras";
 import { IMAGE_BASE } from "@/lib/config";
-import { preload } from "@/lib/imageCache";
+import { preload, cancelExcept } from "@/lib/imageCache";
 import CameraTile from "./CameraTile";
 
 const TARGET_ROWS = 6; // how many rows visible on screen
@@ -20,7 +20,7 @@ function computeGrid(vh: number) {
   const gap = Math.max(16, Math.round(rowStep * 0.08));
   const textSpace = Math.max(18, Math.round(rowStep * 0.07));
   const cell = rowStep - gap - textSpace;
-  return { cell, gap, cellStep: cell + gap, rowHeight: cell + textSpace, rowStep };
+  return { cell, gap, cellStep: cell + gap, rowStep };
 }
 
 interface FreeCanvasProps {
@@ -58,7 +58,7 @@ export default function FreeCanvas({
     rowEnd: 0,
   });
 
-  const { cell, gap, cellStep, rowHeight, rowStep } = grid;
+  const { cell, gap, cellStep, rowStep } = grid;
 
   const totalNeeded = cameras.length + HERO_COLS * HERO_ROWS;
   const cols = Math.ceil(Math.sqrt(totalNeeded));
@@ -149,13 +149,26 @@ export default function FreeCanvas({
       const dy = pos.current.y - prevPos.current.y;
       prevPos.current = { ...pos.current };
 
-      const pfColStart = Math.max(1, range.colStart - (dx > 0 ? PREFETCH_EXTRA : 0));
-      const pfColEnd = Math.min(cols, range.colEnd + (dx < 0 ? PREFETCH_EXTRA : 0));
-      const pfRowStart = Math.max(1, range.rowStart - (dy > 0 ? PREFETCH_EXTRA : 0));
-      const pfRowEnd = Math.min(rows, range.rowEnd + (dy < 0 ? PREFETCH_EXTRA : 0));
+      const moving = dx !== 0 || dy !== 0;
+      const pfColStart = Math.max(1, range.colStart - (!moving || dx > 0 ? PREFETCH_EXTRA : 0));
+      const pfColEnd = Math.min(cols, range.colEnd + (!moving || dx < 0 ? PREFETCH_EXTRA : 0));
+      const pfRowStart = Math.max(1, range.rowStart - (!moving || dy > 0 ? PREFETCH_EXTRA : 0));
+      const pfRowEnd = Math.min(rows, range.rowEnd + (!moving || dy < 0 ? PREFETCH_EXTRA : 0));
+      // Build set of all URLs we want to keep (visible + prefetch)
+      const keepUrls = new Set<string>();
       const map = cellMapRef.current;
       for (let r = pfRowStart; r <= pfRowEnd; r++) {
         for (let c = pfColStart; c <= pfColEnd; c++) {
+          const cam = map.get(`${c},${r}`);
+          if (cam) keepUrls.add(`${IMAGE_BASE}/${thumbUrl(cam)}`);
+        }
+      }
+      cancelExcept(keepUrls);
+
+      // Prefetch off-screen tiles only (visible tiles are loaded by DOM <img>)
+      for (let r = pfRowStart; r <= pfRowEnd; r++) {
+        for (let c = pfColStart; c <= pfColEnd; c++) {
+          if (r >= range.rowStart && r <= range.rowEnd && c >= range.colStart && c <= range.colEnd) continue;
           const cam = map.get(`${c},${r}`);
           if (cam) preload(`${IMAGE_BASE}/${thumbUrl(cam)}`);
         }
@@ -177,6 +190,7 @@ export default function FreeCanvas({
       x: -(heroCenterX - window.innerWidth / 2),
       y: -(heroCenterY - (navbarHeight + window.innerHeight) / 2),
     };
+    prevPos.current = { ...pos.current };
 
     // Apply initial transform so canvas is centered on hero
     if (containerRef.current) {
@@ -187,7 +201,8 @@ export default function FreeCanvas({
     lastRange.current = range;
     setVisibleRange(range);
     setReady(true);
-  }, [cols, rows, heroColStart, heroRowStart, cellStep, rowStep, gap, computeVisibleRange]);
+    scheduleVisibleUpdate();
+  }, [cols, rows, heroColStart, heroRowStart, cellStep, rowStep, gap, computeVisibleRange, scheduleVisibleUpdate]);
 
   // Pointer & wheel event handlers
   useEffect(() => {
@@ -326,8 +341,6 @@ export default function FreeCanvas({
     for (let c = visibleRange.colStart; c <= visibleRange.colEnd; c++) {
       const camera = cellMap.get(`${c},${r}`);
       if (camera) {
-        const src = `${IMAGE_BASE}/${thumbUrl(camera)}`;
-        preload(src);
         const left = (c - 1) * cellStep;
         const top = (r - 1) * rowStep;
         visibleTiles.push(
