@@ -99,6 +99,7 @@ export default memo(function CameraTile({ camera, browse }: CameraTileProps) {
   return (
     <Link
       href={`/cameras/${camera.id}`}
+      prefetch={false}
       className={`block camera-link${browse ? " hover:opacity-80 transition-opacity" : ""}`}
       style={{ cursor: "pointer" }}
       draggable={false}

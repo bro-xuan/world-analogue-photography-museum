@@ -66,6 +66,7 @@ export default function UserMenu() {
           </div>
           <Link
             href="/profile"
+            prefetch={false}
             onClick={() => setOpen(false)}
             className="block text-neutral-700 hover:bg-neutral-50"
             style={{

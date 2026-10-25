@@ -244,7 +244,7 @@ export default function ProfilePage() {
                   </svg>
                 </div>
                 <p className="text-neutral-400" style={{ fontSize: "max(14px, 1.4vh)" }}>
-                  <Link href="/" className="text-neutral-900 hover:underline">
+                  <Link href="/" prefetch={false} className="text-neutral-900 hover:underline">
                     Browse the collection
                   </Link>{" "}
                   and {activeTabDef.emptyText.toLowerCase().split("and ").slice(1).join("and ") || activeTabDef.emptyText.toLowerCase()}

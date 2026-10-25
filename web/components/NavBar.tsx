@@ -21,6 +21,7 @@ export default function NavBar() {
         {/* Logo + Name */}
         <Link
           href="/"
+          prefetch={false}
           className="flex items-center gap-3 group"
           aria-label="Home"
           onClick={(e) => {
@@ -50,6 +51,7 @@ export default function NavBar() {
         <div className="flex items-center gap-2">
           <Link
             href="/"
+            prefetch={false}
             className={`rounded-full transition-colors ${
               pathname === "/"
                 ? "bg-neutral-100 text-neutral-900 font-medium"
@@ -70,6 +72,7 @@ export default function NavBar() {
           </Link>
           <Link
             href="/brands"
+            prefetch={false}
             className={`rounded-full transition-colors ${
               pathname.startsWith("/brands")
                 ? "bg-neutral-100 text-neutral-900 font-medium"

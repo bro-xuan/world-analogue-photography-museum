@@ -61,7 +61,7 @@ export default function BrandPage({ brand }: { brand: BrandEntry }) {
           className="flex items-center"
           style={{ gap: "max(6px, 0.6vh)", fontSize: "max(14px, 1.3vh)", marginBottom: "max(24px, 2.2vh)" }}
         >
-          <Link href="/brands" className="text-neutral-400 hover:text-neutral-900 transition-colors">
+          <Link href="/brands" prefetch={false} className="text-neutral-400 hover:text-neutral-900 transition-colors">
             Brands
           </Link>
           <span className="text-neutral-300">/</span>

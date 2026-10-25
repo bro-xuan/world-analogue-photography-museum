@@ -9,6 +9,7 @@ export default function BrandTile({ brand }: BrandTileProps) {
   return (
     <Link
       href={`/brands/${brand.slug}`}
+      prefetch={false}
       className="block group"
     >
       <div

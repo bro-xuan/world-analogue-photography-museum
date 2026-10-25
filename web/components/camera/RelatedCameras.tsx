@@ -25,6 +25,7 @@ export default function RelatedCameras({
           <Link
             key={cam.id}
             href={`/cameras/${cam.id}`}
+            prefetch={false}
             className="group shrink-0 snap-start"
             style={{ width: "max(160px, 14vh)" }}
           >

@@ -114,6 +114,7 @@ export default function SupportPage() {
         <div className="text-center" style={{ marginTop: "1.8em" }}>
           <Link
             href="/"
+            prefetch={false}
             className="text-neutral-400 hover:text-neutral-600 transition-colors"
             style={{ fontSize: "0.8em" }}
           >

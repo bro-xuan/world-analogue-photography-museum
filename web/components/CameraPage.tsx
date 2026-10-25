@@ -101,6 +101,7 @@ export default function CameraPage({ camera, cameraId }: { camera: CameraDetail;
         >
           <Link
             href={`/brands/${camera.manufacturer.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`}
+            prefetch={false}
             className="text-neutral-400 hover:text-neutral-900 transition-colors"
           >
             {camera.manufacturer}

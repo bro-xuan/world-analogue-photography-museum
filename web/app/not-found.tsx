@@ -15,6 +15,7 @@ export default function NotFound() {
         </p>
         <Link
           href="/"
+          prefetch={false}
           className="inline-block px-6 py-2.5 text-sm font-medium rounded-full bg-neutral-900 text-white hover:bg-neutral-800 transition-colors"
         >
           Back to the museum

@@ -48,9 +48,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <link rel="preload" href="/data/landing.json" as="fetch" crossOrigin="anonymous" />
-      </head>
       <body
         className={`${inter.variable} ${playfair.variable} ${spaceMono.variable} antialiased bg-white`}
       >
