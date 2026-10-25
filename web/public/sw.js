@@ -1,6 +1,9 @@
 const CACHE_NAME = "analogcams-v2";
 
-const PRECACHE_URLS = ["/", "/data/landing.json"];
+// landing.json (1.3MB) is not precached: the SW registers on every route, so
+// precaching it charged every camera-page visitor for it. The data handler
+// below caches it the first time the homepage actually fetches it.
+const PRECACHE_URLS = ["/"];
 
 // Install: precache critical resources
 self.addEventListener("install", (event) => {
